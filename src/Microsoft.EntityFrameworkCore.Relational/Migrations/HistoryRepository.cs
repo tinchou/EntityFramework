@@ -17,26 +17,39 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Migrations
 {
-    // TODO: Leverage query pipeline for GetAppliedMigrations
-    // TODO: Leverage update pipeline for GetInsertScript & GetDeleteScript
-    public abstract class HistoryRepository : IHistoryRepository
+    /// <summary>
+    ///     <para>
+    ///         Service dependencies parameter class for <see cref="HistoryRepository" />
+    ///     </para>
+    ///     <para>
+    ///         This type is typically used by database providers (and other extensions). It is generally
+    ///         not used in application code.
+    ///     </para>
+    /// </summary>
+    public sealed class HistoryRepositoryDependencies
     {
-        public const string DefaultTableName = "__EFMigrationsHistory";
-
-        private readonly IRelationalDatabaseCreator _databaseCreator;
-        private readonly IRawSqlCommandBuilder _rawSqlCommandBuilder;
-        private readonly IRelationalConnection _connection;
-        private readonly IMigrationsModelDiffer _modelDiffer;
-        private readonly IMigrationsSqlGenerator _migrationsSqlGenerator;
-        private readonly LazyRef<IModel> _model;
-        private readonly LazyRef<string> _migrationIdColumnName;
-        private readonly LazyRef<string> _productVersionColumnName;
-
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
+        ///     <para>
+        ///         Creates the service dependencies parameter object for a <see cref="HistoryRepository" />.
+        ///     </para>
+        ///     <para>
+        ///         Do not call this constructor directly from provider or application code as it may change
+        ///         as new dependencies are added. Use the 'With...' methods instead.
+        ///     </para>
+        ///     <para>
+        ///         This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///         directly from your code. This API may change or be removed in future releases.
+        ///     </para>
         /// </summary>
-        protected HistoryRepository(
+        /// <param name="databaseCreator"> The database creator. </param>
+        /// <param name="rawSqlCommandBuilder"> A command builder for building raw SQL commands. </param>
+        /// <param name="connection"> The connection to the database. </param>
+        /// <param name="options"> Options for the current context instance. </param>
+        /// <param name="modelDiffer"> The model differ. </param>
+        /// <param name="migrationsSqlGenerator"> The SQL generator for Migrations operations. </param>
+        /// <param name="annotations"> Access to relational metadata for the model. </param>
+        /// <param name="sqlGenerationHelper"> Helpers for generating update SQL. </param>
+        public HistoryRepositoryDependencies(
             [NotNull] IDatabaseCreator databaseCreator,
             [NotNull] IRawSqlCommandBuilder rawSqlCommandBuilder,
             [NotNull] IRelationalConnection connection,
@@ -55,14 +68,78 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(annotations, nameof(annotations));
             Check.NotNull(sqlGenerationHelper, nameof(sqlGenerationHelper));
 
-            _databaseCreator = (IRelationalDatabaseCreator)databaseCreator;
-            _rawSqlCommandBuilder = rawSqlCommandBuilder;
-            _connection = connection;
-            _modelDiffer = modelDiffer;
-            _migrationsSqlGenerator = migrationsSqlGenerator;
+            DatabaseCreator = (IRelationalDatabaseCreator)databaseCreator;
+            RawSqlCommandBuilder = rawSqlCommandBuilder;
+            Connection = connection;
+            Options = options;
+            ModelDiffer = modelDiffer;
+            MigrationsSqlGenerator = migrationsSqlGenerator;
+            Annotations = annotations;
             SqlGenerationHelper = sqlGenerationHelper;
+        }
 
-            var relationalOptions = RelationalOptionsExtension.Extract(options);
+        /// <summary>
+        ///     The database creator.
+        /// </summary>
+        public IRelationalDatabaseCreator DatabaseCreator { get; }
+
+        /// <summary>
+        ///     A command builder for building raw SQL commands.
+        /// </summary>
+        public IRawSqlCommandBuilder RawSqlCommandBuilder { get; }
+
+        /// <summary>
+        ///     The connection to the database.
+        /// </summary>
+        public IRelationalConnection Connection { get; }
+
+        /// <summary>
+        ///     Options for the current context instance.
+        /// </summary>
+        public IDbContextOptions Options { get; }
+
+        /// <summary>
+        ///     The model differ.
+        /// </summary>
+        public IMigrationsModelDiffer ModelDiffer { get; }
+
+        /// <summary>
+        ///     The SQL generator for Migrations operations.
+        /// </summary>
+        public IMigrationsSqlGenerator MigrationsSqlGenerator { get; }
+
+        /// <summary>
+        ///     Access to relational metadata for the model.
+        /// </summary>
+        public IRelationalAnnotationProvider Annotations { get; }
+
+        /// <summary>
+        ///     Helpers for generating update SQL.
+        /// </summary>
+        public ISqlGenerationHelper SqlGenerationHelper { get; }
+    }
+
+    // TODO: Leverage query pipeline for GetAppliedMigrations
+    // TODO: Leverage update pipeline for GetInsertScript & GetDeleteScript
+    public abstract class HistoryRepository : IHistoryRepository
+    {
+        public const string DefaultTableName = "__EFMigrationsHistory";
+
+        private readonly LazyRef<IModel> _model;
+        private readonly LazyRef<string> _migrationIdColumnName;
+        private readonly LazyRef<string> _productVersionColumnName;
+
+        /// <summary>
+        ///     Initializes a new instance of this class.
+        /// </summary>
+        /// <param name="dependencies"> Parameter object containing dependencies for this service. </param>
+        protected HistoryRepository([NotNull] HistoryRepositoryDependencies dependencies)
+        {
+            Check.NotNull(dependencies, nameof(dependencies));
+
+            Dependencies = dependencies;
+
+            var relationalOptions = RelationalOptionsExtension.Extract(dependencies.Options);
             TableName = relationalOptions?.MigrationsHistoryTableName ?? DefaultTableName;
             TableSchema = relationalOptions?.MigrationsHistoryTableSchema;
             _model = new LazyRef<IModel>(
@@ -80,12 +157,18 @@ namespace Microsoft.EntityFrameworkCore.Migrations
                     });
             var entityType = new LazyRef<IEntityType>(() => _model.Value.FindEntityType(typeof(HistoryRow)));
             _migrationIdColumnName = new LazyRef<string>(
-                () => annotations.For(entityType.Value.FindProperty(nameof(HistoryRow.MigrationId))).ColumnName);
+                () => dependencies.Annotations.For(entityType.Value.FindProperty(nameof(HistoryRow.MigrationId))).ColumnName);
             _productVersionColumnName = new LazyRef<string>(
-                () => annotations.For(entityType.Value.FindProperty(nameof(HistoryRow.ProductVersion))).ColumnName);
+                () => dependencies.Annotations.For(entityType.Value.FindProperty(nameof(HistoryRow.ProductVersion))).ColumnName);
         }
 
-        protected virtual ISqlGenerationHelper SqlGenerationHelper { get; }
+        /// <summary>
+        ///     Parameter object containing service dependencies.
+        /// </summary>
+        protected virtual HistoryRepositoryDependencies Dependencies { get; }
+
+        protected virtual ISqlGenerationHelper SqlGenerationHelper => Dependencies.SqlGenerationHelper;
+
         protected virtual string TableName { get; }
         protected virtual string TableSchema { get; }
         protected virtual string MigrationIdColumnName => _migrationIdColumnName.Value;
@@ -94,14 +177,15 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         protected abstract string ExistsSql { get; }
 
         public virtual bool Exists()
-            => _databaseCreator.Exists()
+            => Dependencies.DatabaseCreator.Exists()
                && InterpretExistsResult(
-                   _rawSqlCommandBuilder.Build(ExistsSql).ExecuteScalar(_connection));
+                   Dependencies.RawSqlCommandBuilder.Build(ExistsSql).ExecuteScalar(Dependencies.Connection));
 
         public virtual async Task<bool> ExistsAsync(CancellationToken cancellationToken = default(CancellationToken))
-            => await _databaseCreator.ExistsAsync(cancellationToken)
+            => await Dependencies.DatabaseCreator.ExistsAsync(cancellationToken)
                && InterpretExistsResult(
-                   await _rawSqlCommandBuilder.Build(ExistsSql).ExecuteScalarAsync(_connection, cancellationToken: cancellationToken));
+                   await Dependencies.RawSqlCommandBuilder.Build(ExistsSql).ExecuteScalarAsync(
+                       Dependencies.Connection, cancellationToken: cancellationToken));
 
         /// <returns>true if the table exists; otherwise, false.</returns>
         protected abstract bool InterpretExistsResult([NotNull] object value);
@@ -110,8 +194,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
         public virtual string GetCreateScript()
         {
-            var operations = _modelDiffer.GetDifferences(null, _model.Value);
-            var commandList = _migrationsSqlGenerator.Generate(operations, _model.Value);
+            var operations = Dependencies.ModelDiffer.GetDifferences(null, _model.Value);
+            var commandList = Dependencies.MigrationsSqlGenerator.Generate(operations, _model.Value);
 
             return string.Concat(commandList.Select(c => c.CommandText));
         }
@@ -130,9 +214,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
             if (Exists())
             {
-                var command = _rawSqlCommandBuilder.Build(GetAppliedMigrationsSql);
+                var command = Dependencies.RawSqlCommandBuilder.Build(GetAppliedMigrationsSql);
 
-                using (var reader = command.ExecuteReader(_connection))
+                using (var reader = command.ExecuteReader(Dependencies.Connection))
                 {
                     while (reader.DbDataReader.Read())
                     {
@@ -151,9 +235,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations
 
             if (await ExistsAsync(cancellationToken))
             {
-                var command = _rawSqlCommandBuilder.Build(GetAppliedMigrationsSql);
+                var command = Dependencies.RawSqlCommandBuilder.Build(GetAppliedMigrationsSql);
 
-                using (var reader = await command.ExecuteReaderAsync(_connection, cancellationToken: cancellationToken))
+                using (var reader = await command.ExecuteReaderAsync(Dependencies.Connection, cancellationToken: cancellationToken))
                 {
                     while (await reader.DbDataReader.ReadAsync(cancellationToken))
                     {

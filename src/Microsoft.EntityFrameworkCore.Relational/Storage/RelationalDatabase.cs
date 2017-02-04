@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.EntityFrameworkCore.Utilities;
 
@@ -22,31 +21,21 @@ namespace Microsoft.EntityFrameworkCore.Storage
     /// </summary>
     public class RelationalDatabase : Database
     {
-        private readonly ICommandBatchPreparer _batchPreparer;
-        private readonly IBatchExecutor _batchExecutor;
-        private readonly IRelationalConnection _connection;
+        private readonly RelationalDatabaseDependencies _relationalDependencies;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="RelationalDatabase" /> class.
         /// </summary>
-        /// <param name="queryCompilationContextFactory"> The <see cref="IQueryCompilationContextFactory" /> to be used. </param>
-        /// <param name="batchPreparer"> The <see cref="ICommandBatchPreparer" /> to be used. </param>
-        /// <param name="batchExecutor"> The <see cref="IBatchExecutor" /> to be used. </param>
-        /// <param name="connection"> The <see cref="IRelationalConnection" /> to be used. </param>
+        /// <param name="dependencies"> Parameter object containing dependencies for the base of this service. </param>
+        /// <param name="relationalDependencies"> Parameter object containing dependencies for this service. </param>
         public RelationalDatabase(
-            [NotNull] IQueryCompilationContextFactory queryCompilationContextFactory,
-            [NotNull] ICommandBatchPreparer batchPreparer,
-            [NotNull] IBatchExecutor batchExecutor,
-            [NotNull] IRelationalConnection connection)
-            : base(queryCompilationContextFactory)
+            [NotNull] DatabaseDependencies dependencies,
+            [NotNull] RelationalDatabaseDependencies relationalDependencies)
+            : base(dependencies)
         {
-            Check.NotNull(batchPreparer, nameof(batchPreparer));
-            Check.NotNull(batchExecutor, nameof(batchExecutor));
-            Check.NotNull(connection, nameof(connection));
+            Check.NotNull(relationalDependencies, nameof(relationalDependencies));
 
-            _batchPreparer = batchPreparer;
-            _batchExecutor = batchExecutor;
-            _connection = connection;
+            _relationalDependencies = relationalDependencies;
         }
 
         /// <summary>
@@ -56,10 +45,10 @@ namespace Microsoft.EntityFrameworkCore.Storage
         /// <returns> The number of state entries persisted to the database. </returns>
         public override int SaveChanges(
             IReadOnlyList<IUpdateEntry> entries)
-            => _batchExecutor.Execute(
-                _batchPreparer.BatchCommands(
+            => _relationalDependencies.BatchExecutor.Execute(
+                _relationalDependencies.BatchPreparer.BatchCommands(
                     Check.NotNull(entries, nameof(entries))),
-                _connection);
+                _relationalDependencies.Connection);
 
         /// <summary>
         ///     Asynchronously persists changes from the supplied entries to the database.
@@ -73,10 +62,10 @@ namespace Microsoft.EntityFrameworkCore.Storage
         public override Task<int> SaveChangesAsync(
             IReadOnlyList<IUpdateEntry> entries,
             CancellationToken cancellationToken = default(CancellationToken))
-            => _batchExecutor.ExecuteAsync(
-                _batchPreparer.BatchCommands(
+            => _relationalDependencies.BatchExecutor.ExecuteAsync(
+                _relationalDependencies.BatchPreparer.BatchCommands(
                     Check.NotNull(entries, nameof(entries))),
-                _connection,
+                _relationalDependencies.Connection,
                 cancellationToken);
     }
 }

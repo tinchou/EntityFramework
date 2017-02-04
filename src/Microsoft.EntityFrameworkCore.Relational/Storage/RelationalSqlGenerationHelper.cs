@@ -13,6 +13,32 @@ namespace Microsoft.EntityFrameworkCore.Storage
 {
     /// <summary>
     ///     <para>
+    ///         Service dependencies parameter class for <see cref="RelationalSqlGenerationHelper" />
+    ///     </para>
+    ///     <para>
+    ///         This type is typically used by database providers (and other extensions). It is generally
+    ///         not used in application code.
+    ///     </para>
+    /// </summary>
+    public sealed class RelationalSqlGenerationHelperDependencies
+    {
+        /// <summary>
+        ///     <para>
+        ///         Creates the service dependencies parameter object for a <see cref="RelationalSqlGenerationHelper" />.
+        ///     </para>
+        ///     <para>
+        ///         Do not call this constructor directly from provider or application code as it may change
+        ///         as new dependencies are added. Use the 'With...' methods instead.
+        ///     </para>
+        /// </summary>
+        // ReSharper disable once EmptyConstructor
+        public RelationalSqlGenerationHelperDependencies()
+        {
+        }
+    }
+
+    /// <summary>
+    ///     <para>
     ///         Provides services to help with generation of SQL commands.
     ///     </para>
     ///     <para>
@@ -28,6 +54,15 @@ namespace Microsoft.EntityFrameworkCore.Storage
         private const string DateTimeFormatStringConst = "TIMESTAMP '{0:" + DateTimeFormatConst + "}'";
         private const string DateTimeOffsetFormatConst = @"yyyy-MM-dd HH\:mm\:ss.fffffffzzz";
         private const string DateTimeOffsetFormatStringConst = "TIMESTAMP '{0:" + DateTimeOffsetFormatConst + "}'";
+
+        /// <summary>
+        ///     Initializes a new instance of the this class.
+        /// </summary>
+        /// <param name="dependencies"> Parameter object containing dependencies for this service. </param>
+        public RelationalSqlGenerationHelper([NotNull] RelationalSqlGenerationHelperDependencies dependencies)
+        {
+            Check.NotNull(dependencies, nameof(dependencies));
+        }
 
         /// <summary>
         ///     Gets the floating point format.

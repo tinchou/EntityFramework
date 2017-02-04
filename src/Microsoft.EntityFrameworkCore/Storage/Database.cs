@@ -24,17 +24,17 @@ namespace Microsoft.EntityFrameworkCore.Storage
     /// </summary>
     public abstract class Database : IDatabase
     {
-        private readonly IQueryCompilationContextFactory _queryCompilationContextFactory;
+        private readonly DatabaseDependencies _dependencies;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Database" /> class.
         /// </summary>
-        /// <param name="queryCompilationContextFactory"> Factory for compilation contexts to process LINQ queries. </param>
-        protected Database([NotNull] IQueryCompilationContextFactory queryCompilationContextFactory)
+        /// <param name="dependencies"> Parameter object containing dependencies for this service. </param>
+        protected Database([NotNull] DatabaseDependencies dependencies)
         {
-            Check.NotNull(queryCompilationContextFactory, nameof(queryCompilationContextFactory));
+            Check.NotNull(dependencies, nameof(dependencies));
 
-            _queryCompilationContextFactory = queryCompilationContextFactory;
+            _dependencies = dependencies;
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
         /// <param name="queryModel"> An object model representing the query to be executed. </param>
         /// <returns> A function that will execute the query. </returns>
         public virtual Func<QueryContext, IEnumerable<TResult>> CompileQuery<TResult>(QueryModel queryModel)
-            => _queryCompilationContextFactory
+            => _dependencies.QueryCompilationContextFactory
                 .Create(async: false)
                 .CreateQueryModelVisitor()
                 .CreateQueryExecutor<TResult>(Check.NotNull(queryModel, nameof(queryModel)));
@@ -76,7 +76,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
         /// <param name="queryModel"> An object model representing the query to be executed. </param>
         /// <returns> A function that will asynchronously execute the query. </returns>
         public virtual Func<QueryContext, IAsyncEnumerable<TResult>> CompileAsyncQuery<TResult>(QueryModel queryModel)
-            => _queryCompilationContextFactory
+            => _dependencies.QueryCompilationContextFactory
                 .Create(async: true)
                 .CreateQueryModelVisitor()
                 .CreateAsyncQueryExecutor<TResult>(Check.NotNull(queryModel, nameof(queryModel)));

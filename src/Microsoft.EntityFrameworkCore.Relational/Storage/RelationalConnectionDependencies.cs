@@ -67,7 +67,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
         /// <param name="contextOptions">
         ///     A replacement for the current dependency of this type.
         /// </param>
-        /// <returns></returns>
+        /// <returns> A new parameter object with the given service replaced. </returns>
         public RelationalConnectionDependencies With([NotNull] IDbContextOptions contextOptions)
             => new RelationalConnectionDependencies(Check.NotNull(contextOptions, nameof(contextOptions)), Logger, DiagnosticSource);
 
@@ -77,8 +77,18 @@ namespace Microsoft.EntityFrameworkCore.Storage
         /// <param name="logger">
         ///     A replacement for the current dependency of this type.
         /// </param>
-        /// <returns></returns>
+        /// <returns> A new parameter object with the given service replaced. </returns>
         public RelationalConnectionDependencies With([NotNull] ILogger<IRelationalConnection> logger)
             => new RelationalConnectionDependencies(ContextOptions, Check.NotNull(logger, nameof(logger)), DiagnosticSource);
+
+        /// <summary>
+        ///     Clones this dependency parameter object with one service replaced.
+        /// </summary>
+        /// <param name="diagnosticSource">
+        ///     A replacement for the current dependency of this type.
+        /// </param>
+        /// <returns> A new parameter object with the given service replaced. </returns>
+        public RelationalConnectionDependencies With([NotNull] DiagnosticSource diagnosticSource)
+            => new RelationalConnectionDependencies(ContextOptions, Logger, Check.NotNull(diagnosticSource, nameof(diagnosticSource)));
     }
 }
