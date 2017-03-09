@@ -1816,6 +1816,46 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
 
         #endregion
 
+        #region SeedData
+
+        [Fact]
+        public virtual void SeedData_annotations_are_stored_in_snapshot()
+        {
+            Test(
+                builder =>
+                {
+                    builder.Entity<EntityWithOneProperty>()
+                        .Ignore(e => e.EntityWithTwoProperties)
+                        .SeedData(new[] { new EntityWithOneProperty { Id = 42 } });
+                    builder.Ignore<EntityWithTwoProperties>();
+                },
+               GetHeading() + @"
+builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelSnapshotTest+EntityWithOneProperty"", b =>
+    {
+        b.Property<int>(""Id"")
+            .ValueGeneratedOnAdd();
+
+        b.HasKey(""Id"");
+
+        b.ToTable(""EntityWithOneProperty"");
+
+        b.SeedData(new[]
+        {
+            new { Id = 42 }
+        });
+    });
+",
+                o =>
+                {
+                    object seed = o.GetEntityTypes().Single().GetSeedData().Single();
+                    var property = seed.GetType().GetProperty("Id");
+                    Assert.Equal(42, (int)property.GetValue(seed));
+                }
+            );
+        }
+
+        #endregion
+
         protected virtual string GetHeading() => "";
 
         protected virtual ICollection<BuildReference> GetReferences() => new List<BuildReference>

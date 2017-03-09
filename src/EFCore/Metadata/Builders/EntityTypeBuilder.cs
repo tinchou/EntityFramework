@@ -529,5 +529,22 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
 
             return this;
         }
+
+        /// <summary>
+        ///     Configures this entity to have seed data. It is used to generate data motion migrations.
+        /// </summary>
+        /// <param name="data">
+        ///     An array of seed data.
+        /// </param>
+        public virtual EntityTypeBuilder SeedData([NotNull] params object[] data)
+        {
+            Check.NotNull(data, nameof(data));
+
+            //Builder.HasSeedData()
+            //var propertyName = propertyExpression.GetPropertyAccess().Name;
+            //Builder.Ignore(propertyName, ConfigurationSource.Explicit);
+
+            return this;
+        }
     }
 }

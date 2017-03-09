@@ -119,6 +119,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                     GenerateIndexes(entityType.GetDeclaredIndexes(), stringBuilder);
 
                     GenerateEntityTypeAnnotations(entityType, stringBuilder);
+
+                    GenerateSeedData(entityType.GetDeclaredSeedData(), stringBuilder);
                 }
 
                 stringBuilder
@@ -654,6 +656,47 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                 .Append(", ")
                 .Append(_code.UnknownLiteral(annotation.Value))
                 .Append(")");
+        }
+
+        protected virtual void GenerateSeedData(
+            [NotNull] IEnumerable<object> data, [NotNull] IndentedStringBuilder stringBuilder)
+        {
+            Check.NotNull(data, nameof(data));
+            Check.NotNull(stringBuilder, nameof(stringBuilder));
+
+            // TODO: don't iterate twice
+            if (data.Count() == 0)
+            {
+                return;
+            }
+
+            stringBuilder
+                .AppendLine()
+                .AppendLine()
+                .AppendLine("b.SeedData(new[]")
+                .AppendLine("{");
+
+            using (stringBuilder.Indent())
+            {
+                var firstDatum = true;
+                foreach (var o in data)
+                {
+                    if (!firstDatum)
+                    {
+                        stringBuilder.AppendLine(",");
+                    }
+                    else
+                    {
+                        firstDatum = false;
+                    }
+
+                    stringBuilder.Append(_code.AnonymousLiteral(o));
+                }
+            }
+
+            stringBuilder
+                .AppendLine()
+                .Append("});");
         }
     }
 }
