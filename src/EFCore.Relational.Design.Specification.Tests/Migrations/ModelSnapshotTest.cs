@@ -1854,6 +1854,72 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
             );
         }
 
+        [Fact]
+        public virtual void SeedData_for_multiple_entities_are_stored_in_model_snapshot()
+        {
+            Test(
+                builder =>
+                {
+                    builder.Entity<EntityWithOneProperty>()
+                        .Ignore(e => e.EntityWithTwoProperties)
+                        .SeedData(new[] { new EntityWithOneProperty { Id = 27 } });
+                    builder.Entity<EntityWithTwoProperties>()
+                        .Ignore(e => e.EntityWithOneProperty)
+                        .SeedData(new[] { new EntityWithTwoProperties { Id = 42, AlternateId = 43 } });
+                },
+                GetHeading() + @"
+builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelSnapshotTest+EntityWithOneProperty"", b =>
+    {
+        b.Property<int>(""Id"")
+            .ValueGeneratedOnAdd();
+
+        b.HasKey(""Id"");
+
+        b.ToTable(""EntityWithOneProperty"");
+
+        b.SeedData(new[]
+        {
+            new { Id = 27 }
+        });
+    });
+
+builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelSnapshotTest+EntityWithTwoProperties"", b =>
+    {
+        b.Property<int>(""Id"")
+            .ValueGeneratedOnAdd();
+
+        b.Property<int>(""AlternateId"");
+
+        b.HasKey(""Id"");
+
+        b.ToTable(""EntityWithTwoProperties"");
+
+        b.SeedData(new[]
+        {
+            new { Id = 42, AlternateId = 43 }
+        });
+    });
+",
+                o =>
+                {
+                    Assert.Equal(2, o.GetEntityTypes().Count());
+                    Assert.Collection(
+                        o.GetEntityTypes().Select(e => e.GetSeedData().Single()),
+                        seed =>
+                        {
+                            var p = seed.GetType().GetProperty("Id");
+                            Assert.Equal(27, (int)p.GetValue(seed));
+                        },
+                        seed =>
+                        {
+                            var p1 = seed.GetType().GetProperty("Id");
+                            Assert.Equal(42, (int)p1.GetValue(seed));
+                            var p2 = seed.GetType().GetProperty("AlternateId");
+                            Assert.Equal(43, (int)p2.GetValue(seed));
+                        });
+                });
+        }
+
         #endregion
 
         protected virtual string GetHeading() => "";

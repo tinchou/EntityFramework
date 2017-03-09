@@ -354,44 +354,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
         public virtual string Literal([NotNull] Enum value) => Reference(value.GetType()) + "." + value;
 
         public virtual string UnknownLiteral([CanBeNull] object value)
-            => TryParseUnknownLiteral(value)
-                ?? throw new InvalidOperationException(DesignStrings.UnknownLiteral(value.GetType()));
-
-        public virtual string AnonymousLiteral([CanBeNull] object value)
-        {
-            var literal = TryParseUnknownLiteral(value);
-            if (literal != null)
-            {
-                return literal;
-            }
-
-            var builder = new StringBuilder("new { ");
-            var firstProperty = true;
-            foreach (var property in value.GetType().GetRuntimeProperties())
-            {
-                if (!firstProperty)
-                {
-                    builder.Append(", ");
-                }
-                else
-                {
-                    firstProperty = false;
-                }
-
-                // a recursive structure will fail with this
-                //builder.Append(AnonymousLiteral(property.GetValue(value)));
-                builder
-                    .Append(Identifier(property.Name))
-                    .Append(" = ")
-                    .Append(UnknownLiteral(property.GetValue(value)));
-            }
-
-            builder.Append(" }");
-            return builder.ToString();
-        }
-
-        // returns null only if it's not a literal
-        private string TryParseUnknownLiteral([CanBeNull] object value)
         {
             if (value == null)
             {
@@ -412,7 +374,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                 return Literal(enumValue);
             }
 
-            return null;
+            throw new InvalidOperationException(DesignStrings.UnknownLiteral(value.GetType()));
         }
 
         private static bool IsIdentifierStartCharacter(char ch)

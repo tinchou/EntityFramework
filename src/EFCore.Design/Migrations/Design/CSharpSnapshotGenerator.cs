@@ -120,7 +120,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
 
                     GenerateEntityTypeAnnotations(entityType, stringBuilder);
 
-                    GenerateSeedData(entityType.GetDeclaredSeedData(), stringBuilder);
+                    GenerateSeedData(entityType.GetDeclaredProperties(), entityType.GetDeclaredSeedData(), stringBuilder);
                 }
 
                 stringBuilder
@@ -659,8 +659,11 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
         }
 
         protected virtual void GenerateSeedData(
-            [NotNull] IEnumerable<object> data, [NotNull] IndentedStringBuilder stringBuilder)
+            [NotNull] IEnumerable<IProperty> properties,
+            [NotNull] IEnumerable<object> data,
+            [NotNull] IndentedStringBuilder stringBuilder)
         {
+            Check.NotNull(properties, nameof(properties));
             Check.NotNull(data, nameof(data));
             Check.NotNull(stringBuilder, nameof(stringBuilder));
 
@@ -681,6 +684,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                 var firstDatum = true;
                 foreach (var o in data)
                 {
+                    stringBuilder.Append("new { ");
                     if (!firstDatum)
                     {
                         stringBuilder.AppendLine(",");
@@ -690,7 +694,26 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                         firstDatum = false;
                     }
 
-                    stringBuilder.Append(_code.AnonymousLiteral(o));
+                    var firstProperty = true;
+                    foreach (var property in properties)
+                    {
+                        if (!firstProperty)
+                        {
+                            stringBuilder.Append(", ");
+                        }
+                        else
+                        {
+                            firstProperty = false;
+                        }
+
+                        // this won't work with nested objects
+                        stringBuilder
+                            .Append(_code.Identifier(property.Name))
+                            .Append(" = ")
+                            .Append(_code.UnknownLiteral(property.GetGetter().GetClrValue(o)));
+                    }
+
+                    stringBuilder.Append(" }");
                 }
             }
 

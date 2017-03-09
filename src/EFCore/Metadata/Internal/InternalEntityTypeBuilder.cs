@@ -2109,27 +2109,17 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public virtual bool UsePropertyAccessMode(PropertyAccessMode propertyAccessMode, ConfigurationSource configurationSource)
             => HasAnnotation(CoreAnnotationNames.PropertyAccessModeAnnotation, propertyAccessMode, configurationSource);
 
-        ///// <summary>
-        /////     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        /////     directly from your code. This API may change or be removed in future releases.
-        ///// </summary>
-        //public virtual InternalRelationshipBuilder HasSeedData(
-        //    [NotNull] string principalEntityTypeName,
-        //    [NotNull] IReadOnlyList<string> propertyNames,
-        //    ConfigurationSource configurationSource)
-        //{
-        //    Check.NotEmpty(principalEntityTypeName, nameof(principalEntityTypeName));
-        //    Check.NotEmpty(propertyNames, nameof(propertyNames));
-
-        //    var principalType = ModelBuilder.Entity(principalEntityTypeName, configurationSource);
-        //    return principalType == null
-        //        ? null
-        //        : HasForeignKeyInternal(
-        //            principalType,
-        //            GetOrCreateProperties(propertyNames, configurationSource, principalType.Metadata.FindPrimaryKey()?.Properties, useDefaultType: true),
-        //            null,
-        //            configurationSource);
-        //}
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual InternalEntityTypeBuilder HasSeedData(
+            [NotNull] object[] data)
+        {
+            Check.NotEmpty(data, nameof(data));
+            Metadata.AddSeedData(data);
+            return this;
+        }
 
         private struct RelationshipSnapshot
         {

@@ -1767,13 +1767,25 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         #region SeedData
 
+        private readonly SortedSet<object> _seedData = new SortedSet<object>();
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public IEnumerable<object> GetSeedData()
+        public virtual IEnumerable<object> GetSeedData()
         {
-            return new[] { new { Id = 42 } };
+            return _seedData;
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        public virtual void AddSeedData(
+            [NotNull] object[] data)
+        {
+            _seedData.UnionWith(data);
         }
 
         #endregion

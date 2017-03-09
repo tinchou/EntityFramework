@@ -540,9 +540,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         {
             Check.NotNull(data, nameof(data));
 
-            //Builder.HasSeedData()
-            //var propertyName = propertyExpression.GetPropertyAccess().Name;
-            //Builder.Ignore(propertyName, ConfigurationSource.Explicit);
+            Builder.HasSeedData(data);
 
             return this;
         }
