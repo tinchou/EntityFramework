@@ -707,6 +707,15 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public virtual List<InternalEntityEntry> GetMigrationOperationsToRun()
+        {
+            return GetEntriesToSave();
+        }
+
         private List<InternalEntityEntry> GetEntriesToSave()
         {
             foreach (var entry in Entries.Where(

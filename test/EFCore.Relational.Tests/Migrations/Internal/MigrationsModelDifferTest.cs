@@ -5156,6 +5156,145 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     });
         }
 
+        [Fact]
+        public void SeedData_add()
+        {
+            Execute(
+                source => source
+                    .Entity(
+                        nameof(EntityWithTwoProperties),
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                        }),
+                target => target
+                    .Entity<EntityWithTwoProperties>(
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(new { Id = 42, Value1 = 32 });
+                        }),
+                operations =>
+                {
+                    Assert.Equal(1, operations.Count);
+                    Assert.Equal(1, operations.OfType<InsertOperation>().Count());
+                });
+        }
+
+        [Fact]
+        public void SeedData_remove()
+        {
+            Execute(
+                source => source
+                    .Entity(
+                        nameof(EntityWithTwoProperties),
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(new { Id = 42, Value1 = 32 });
+                        }),
+                target => target
+                    .Entity<EntityWithTwoProperties>(
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                        }),
+                operations =>
+                {
+                    Assert.Equal(1, operations.Count);
+                    Assert.Equal(1, operations.OfType<DeleteOperation>().Count());
+                });
+        }
+
+        [Fact]
+        public void SeedData_update()
+        {
+            Execute(
+                source => source
+                    .Entity(
+                        nameof(EntityWithTwoProperties),
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
+                                new { Id = 24, Value1 = 72, Value2 = "equal" }); // modified
+                        }),
+                target => target
+                    .Entity<EntityWithTwoProperties>(
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
+                        }),
+                operations =>
+                {
+                    Assert.Equal(2, operations.Count);
+                    Assert.Equal(2, operations.OfType<UpdateOperation>().Count());
+                });
+        }
+
+        [Fact]
+        public void SeedData_all_operations()
+        {
+            Execute(
+                source => source
+                    .Entity(
+                        nameof(EntityWithTwoProperties),
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { Id = 99999, Value1 = 0, Value2 = "" }, // deleted
+                                new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
+                                new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
+                                new { Id = 24, Value1 = 72, Value2 = "equal" }); // modified
+                        }),
+                target => target
+                    .Entity<EntityWithTwoProperties>(
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { Id = 11111, Value1 = 0, Value2 = "" }, // added
+                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                                new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
+                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
+                        }),
+                operations =>
+                {
+                    Assert.Equal(4, operations.Count);
+                    Assert.Equal(1, operations.OfType<InsertOperation>().Count());
+                    Assert.Equal(1, operations.OfType<DeleteOperation>().Count());
+                    Assert.Equal(2, operations.OfType<UpdateOperation>().Count());
+                });
+        }
+
+        private class EntityWithTwoProperties
+        {
+            public int Id { get; set; }
+            public int Value1 { get; set; }
+            public string Value2 { get; set; }
+        }
+
         protected override ModelBuilder CreateModelBuilder() => RelationalTestHelpers.Instance.CreateConventionBuilder();
     }
 }

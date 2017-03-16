@@ -34,7 +34,9 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
             buildCommonAction(targetModelBuilder);
             buildTargetAction(targetModelBuilder);
 
-            var modelDiffer = CreateModelDiffer();
+            var ctx = RelationalTestHelpers.Instance.CreateContext(targetModelBuilder.Model);
+
+            var modelDiffer = CreateModelDiffer(ctx);
 
             var operations = modelDiffer.GetDifferences(sourceModelBuilder.Model, targetModelBuilder.Model);
 
@@ -43,8 +45,9 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
 
         protected abstract ModelBuilder CreateModelBuilder();
 
-        protected virtual MigrationsModelDiffer CreateModelDiffer()
+        protected virtual MigrationsModelDiffer CreateModelDiffer(DbContext ctx)
             => new MigrationsModelDiffer(
+                ctx,
                 new ConcreteTypeMapper(new RelationalTypeMapperDependencies()),
                 new TestAnnotationProvider(),
                 new MigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()));

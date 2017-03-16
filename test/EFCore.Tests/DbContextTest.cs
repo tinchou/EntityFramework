@@ -172,6 +172,11 @@ namespace Microsoft.EntityFrameworkCore.Tests
                 throw new NotImplementedException();
             }
 
+            public List<InternalEntityEntry> GetMigrationOperationsToRun()
+            {
+                throw new NotImplementedException();
+            }
+
             public void UpdateDependentMap(InternalEntityEntry entry, IForeignKey foreignKey)
             {
                 throw new NotImplementedException();
@@ -219,6 +224,11 @@ namespace Microsoft.EntityFrameworkCore.Tests
                 throw new NotImplementedException();
             }
 
+            public InternalEntityEntry GetOrCreateEntry(IEntityType entityType, object entity)
+            {
+                throw new NotImplementedException();
+            }
+
             public InternalEntityEntry StartTrackingFromQuery(
                 IEntityType baseEntityType,
                 object entity,
@@ -249,6 +259,11 @@ namespace Microsoft.EntityFrameworkCore.Tests
             }
 
             public InternalEntityEntry TryGetEntry(object entity, IEntityType type)
+            {
+                throw new NotImplementedException();
+            }
+
+            public InternalEntityEntry TryGetEntryFromUntracked(IEntityType baseEntityType, object entity)
             {
                 throw new NotImplementedException();
             }

@@ -208,5 +208,11 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         void Unsubscribe();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        List<InternalEntityEntry> GetMigrationOperationsToRun();
     }
 }

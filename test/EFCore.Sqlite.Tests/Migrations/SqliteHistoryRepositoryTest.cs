@@ -115,6 +115,7 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
                             { typeof(SqliteOptionsExtension), new SqliteOptionsExtension() }
                         }),
                     new MigrationsModelDiffer(
+                        null,
                         new SqliteTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqliteMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),

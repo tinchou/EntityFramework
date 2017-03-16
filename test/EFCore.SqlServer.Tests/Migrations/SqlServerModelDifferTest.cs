@@ -845,8 +845,9 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
 
         protected override ModelBuilder CreateModelBuilder() => SqlServerTestHelpers.Instance.CreateConventionBuilder();
 
-        protected override MigrationsModelDiffer CreateModelDiffer()
+        protected override MigrationsModelDiffer CreateModelDiffer(DbContext ctx)
             => new MigrationsModelDiffer(
+                ctx,
                 new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                 new SqlServerAnnotationProvider(),
                 new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()));

@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -57,23 +58,39 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             typeof(CreateIndexOperation)
         };
 
+        private static readonly Type[] _dataMotionOperationTypes =
+        {
+            typeof(InsertOperation),
+            typeof(UpdateOperation),
+            typeof(DeleteOperation)
+        };
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public MigrationsModelDiffer(
+            [NotNull] DbContext currentContext,
             [NotNull] IRelationalTypeMapper typeMapper,
             [NotNull] IRelationalAnnotationProvider annotations,
             [NotNull] IMigrationsAnnotationProvider migrationsAnnotations)
         {
+            Check.NotNull(currentContext, nameof(currentContext));
             Check.NotNull(typeMapper, nameof(typeMapper));
             Check.NotNull(annotations, nameof(annotations));
             Check.NotNull(migrationsAnnotations, nameof(migrationsAnnotations));
 
+            CurrentContext = currentContext;
             TypeMapper = typeMapper;
             Annotations = annotations;
             MigrationsAnnotations = migrationsAnnotations;
         }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        protected virtual DbContext CurrentContext { get; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -137,6 +154,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             var constraintOperations = new List<MigrationOperation>();
             var renameOperations = new List<MigrationOperation>();
             var renameTableOperations = new List<MigrationOperation>();
+            var dataMotionOperations = new List<MigrationOperation>();
             var leftovers = new List<MigrationOperation>();
 
             foreach (var operation in operations)
@@ -208,6 +226,10 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 else if (type == typeof(RenameTableOperation))
                 {
                     renameTableOperations.Add(operation);
+                }
+                else if (_dataMotionOperationTypes.Contains(type))
+                {
+                    dataMotionOperations.Add(operation);
                 }
                 else
                 {
@@ -290,6 +312,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 .Concat(restartSequenceOperations)
                 .Concat(createTableOperations)
                 .Concat(constraintOperations)
+                .Concat(dataMotionOperations)
                 .Concat(leftovers)
                 .ToList();
         }
@@ -482,6 +505,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 .Concat(Diff(source.GetProperties(), target.GetProperties(), diffContext))
                 .Concat(Diff(source.GetKeys(), target.GetKeys(), diffContext))
                 .Concat(Diff(source.GetIndexes(), target.GetIndexes(), diffContext));
+                .Concat(DiffSeedData(source, target, diffContext));
             foreach (var operation in operations)
             {
                 yield return operation;
@@ -1161,6 +1185,75 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             sequenceOperation.AddAnnotations(migrationsAnnotations);
 
             return sequenceOperation;
+        }
+
+        #endregion
+
+        #region SeedData
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        protected virtual IEnumerable<MigrationOperation> DiffSeedData(
+            [NotNull] IEntityType source,
+            [NotNull] IEntityType target,
+            [NotNull] DiffContext diffContext)
+        {
+            var key = target.FindPrimaryKey();
+
+            foreach (var sourceSeed in source.GetSeedData())
+            {
+                CurrentContext.Entry(NewEntityWithValues(target, sourceSeed)).State = EntityState.Deleted;
+            }
+
+            foreach (var targetSeed in target.GetSeedData())
+            {
+                var typedTargetSeed = NewEntityWithValues(target, targetSeed);
+                var keyValues = key.Properties.Select(p => p.GetGetter().GetClrValue(typedTargetSeed)).ToArray();
+                var existingEntry = CurrentContext.TryGetEntry(key, keyValues);
+                if (existingEntry != null)
+                {
+                    existingEntry.State = EntityState.Unchanged;
+                    existingEntry.CurrentValues.SetValues(typedTargetSeed);
+                }
+                else
+                {
+                    CurrentContext.Entry(typedTargetSeed).State = EntityState.Added;
+                }
+            }
+
+            var operations = CurrentContext.ChangeTracker.GetMigrationOperations();
+            foreach (var o in operations)
+            {
+                if (o.EntityState == EntityState.Added)
+                {
+                    yield return new InsertOperation();
+                }
+                else if (o.EntityState == EntityState.Deleted)
+                {
+                    yield return new DeleteOperation();
+                }
+                else if (o.EntityState == EntityState.Modified)
+                {
+                    yield return new UpdateOperation();
+                }
+            }
+        }
+
+        private static object NewEntityWithValues(IEntityType target, object obj)
+        {
+            var instance = Activator.CreateInstance(target.ClrType);
+            foreach (var property in instance.GetType().GetRuntimeProperties())
+            {
+                var getter = obj.GetType().GetAnyProperty(property.Name)?.FindGetterProperty();
+                if (getter != null)
+                {
+                    property.SetValue(instance, getter.GetValue(obj));
+                }
+            }
+
+            return instance;
         }
 
         #endregion

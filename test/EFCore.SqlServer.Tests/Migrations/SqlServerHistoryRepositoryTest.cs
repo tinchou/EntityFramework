@@ -154,20 +154,23 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
                     new DiagnosticListener("Fake")),
                 typeMapper);
 
-            return new SqlServerHistoryRepository(
-                new HistoryRepositoryDependencies(
-                    Mock.Of<IRelationalDatabaseCreator>(),
-                    Mock.Of<IRawSqlCommandBuilder>(),
-                    Mock.Of<ISqlServerConnection>(),
-                    new DbContextOptions<DbContext>(
+            var options = new DbContextOptions<DbContext>(
                         new Dictionary<Type, IDbContextOptionsExtension>
                         {
                             {
                                 typeof(SqlServerOptionsExtension),
                                 new SqlServerOptionsExtension().WithMigrationsHistoryTableSchema(schema)
                             }
-                        }),
+                        });
+
+            return new SqlServerHistoryRepository(
+                new HistoryRepositoryDependencies(
+                    Mock.Of<IRelationalDatabaseCreator>(),
+                    Mock.Of<IRawSqlCommandBuilder>(),
+                    Mock.Of<ISqlServerConnection>(),
+                    options,
                     new MigrationsModelDiffer(
+                        new DbContext(options),
                         new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),

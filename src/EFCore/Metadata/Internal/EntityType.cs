@@ -1767,7 +1767,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         #region SeedData
 
-        private readonly SortedSet<object> _seedData = new SortedSet<object>();
+        private readonly HashSet<object> _seedData = new HashSet<object>();
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used

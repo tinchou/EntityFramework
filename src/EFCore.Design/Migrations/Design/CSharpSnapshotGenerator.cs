@@ -120,7 +120,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
 
                     GenerateEntityTypeAnnotations(entityType, stringBuilder);
 
-                    GenerateSeedData(entityType.GetDeclaredProperties(), entityType.GetDeclaredSeedData(), stringBuilder);
+                    GenerateSeedData(entityType.GetProperties(), entityType.GetSeedData(), stringBuilder);
                 }
 
                 stringBuilder

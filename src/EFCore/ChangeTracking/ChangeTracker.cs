@@ -225,5 +225,14 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking
 
         private IEntityEntryGraphIterator GraphIterator
             => _graphIterator ?? (_graphIterator = Context.GetService<IEntityEntryGraphIterator>());
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public List<InternalEntityEntry> GetMigrationOperations()
+        {
+            return StateManager.GetMigrationOperationsToRun();
+        }
     }
 }
