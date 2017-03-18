@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Storage
 {
-    public class SqlServerSqlGeneratorTest : SqlGeneratorTestBase
+    public class SqlServerSqlGenerationHelperTest : SqlGenerationHelperTestBase
     {
         [Fact]
         public override void GenerateLiteral_returns_ByteArray_literal()

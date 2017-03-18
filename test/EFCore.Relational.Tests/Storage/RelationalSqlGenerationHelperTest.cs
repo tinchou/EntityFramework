@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Microsoft.EntityFrameworkCore.Relational.Tests.Storage
 {
-    public class RelationalSqlGeneratorTest : SqlGeneratorTestBase
+    public class RelationalSqlGenerationHelperTest : SqlGenerationHelperTestBase
     {
         protected override ISqlGenerationHelper CreateSqlGenerationHelper()
             => new RelationalSqlGenerationHelper(new RelationalSqlGenerationHelperDependencies());

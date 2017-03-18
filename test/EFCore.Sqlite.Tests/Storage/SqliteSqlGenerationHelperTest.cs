@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Storage
 {
-    public class SqliteSqlGeneratorTest : SqlGeneratorTestBase
+    public class SqliteSqlGenerationHelperTest : SqlGenerationHelperTestBase
     {
         public override void GenerateLiteral_returns_DateTime_literal()
         {
