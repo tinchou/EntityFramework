@@ -7,14 +7,13 @@ using System.Linq;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Update
 {
-    public class ModificationCommand
+    public class ModificationCommand : ModificationCommandBase
     {
         private readonly IRelationalAnnotationProvider _annotationProvider;
         private readonly Func<string> _generateParameterName;
@@ -36,26 +35,25 @@ namespace Microsoft.EntityFrameworkCore.Update
             [NotNull] IRelationalAnnotationProvider annotationProvider,
             bool sensitiveLoggingEnabled,
             [CanBeNull] IComparer<IUpdateEntry> comparer)
+        : base(
+            Check.NotEmpty(name, nameof(name)),
+            schema,
+            null)
         {
-            Check.NotEmpty(name, nameof(name));
             Check.NotNull(generateParameterName, nameof(generateParameterName));
             Check.NotNull(annotationProvider, nameof(annotationProvider));
 
-            TableName = name;
-            Schema = schema;
             _generateParameterName = generateParameterName;
             _annotationProvider = annotationProvider;
             _comparer = comparer;
             _sensitiveLoggingEnabled = sensitiveLoggingEnabled;
         }
 
-        public virtual string TableName { get; }
-
-        public virtual string Schema { get; }
-
         public virtual IReadOnlyList<IUpdateEntry> Entries => _entries;
 
         public virtual EntityState EntityState => _entries.FirstOrDefault()?.EntityState ?? EntityState.Detached;
+
+        public override IReadOnlyList<ColumnModificationBase> ColumnModificationsBase => ColumnModifications;
 
         public virtual IReadOnlyList<ColumnModification> ColumnModifications
             => NonCapturingLazyInitializer.EnsureInitialized(ref _columnModifications, this, command => command.GenerateColumnModifications());
@@ -291,7 +289,7 @@ namespace Microsoft.EntityFrameworkCore.Update
             var index = 0;
             foreach (var modification in ColumnModifications.Where(o => o.IsRead))
             {
-                modification.Value = valueBuffer[index++];
+                modification.SetValue(valueBuffer[index++]);
             }
         }
     }

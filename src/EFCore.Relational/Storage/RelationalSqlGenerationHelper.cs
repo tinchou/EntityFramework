@@ -139,20 +139,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
         /// <param name="typeMapping">An optional type mapping that is used for this value.</param>
         public virtual void GenerateLiteral(StringBuilder builder, object value, RelationalTypeMapping typeMapping = null)
         {
-            if (value != null)
-            {
-                var s = value as string;
-                if (s != null)
-                {
-                    GenerateLiteralValue(builder, s, typeMapping);
-                }
-                else
-                {
-                    GenerateLiteralValue(builder, (dynamic)value);
-                }
-            }
-
-            builder.Append("NULL");
+            builder.Append(GenerateLiteral(value, typeMapping));
         }
 
         /// <summary>

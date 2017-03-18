@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Microsoft.EntityFrameworkCore.Update;
 
 namespace Microsoft.EntityFrameworkCore.Relational.Specification.Tests
 {
@@ -563,109 +564,50 @@ namespace Microsoft.EntityFrameworkCore.Relational.Specification.Tests
                 });
 
         [Fact]
-        public virtual void InsertRowsOperation()
+        public virtual void InsertOperation_one_row()
             => Generate(
-                new InsertOperation
-                {
-                    Table = "People",
-                    Columns = new[] { "Id", "Full Name" },
-                    Values = new object[,]
-                    {
-                        { 0, null },
-                        { 1, "Daenerys Targaryen" },
-                        { 2, "John Snow" },
-                        { 3, "Arya Stark" },
-                        { 4, "Harry Strickland" },
-                    }
-                });
-
-        [Fact]
-        public virtual void DeleteRowsOperation_simple_key()
-            => Generate(
-                new DeleteOperation
-                {
-                    Table = "People",
-                    KeyColumns = new[] { "Id" },
-                    KeyValues = new object[,]
-                    {
-                        { 2 },
-                        { 4 }
-                    }
-                });
+                new InsertOperation(
+                    "People", 
+                    new[] { "Id", "Full Name" },
+                    new object[] { 1, "Daenerys Targaryen" }));
 
         [Fact]
         public virtual void DeleteRowsOperation_composite_key()
             => Generate(
-                new DeleteOperation
-                {
-                    Table = "People",
-                    KeyColumns = new[] { "First Name", "Last Name" },
-                    KeyValues = new object[,]
-                    {
-                        { "Hodor", null },
-                        { "Daenerys", "Targaryen" }
-                    }
-                });
+                new DeleteOperation(
+                    "People",
+                    new[] { "Id1", "Id2" },
+                    new object[] { 2, "John Snow" }));
 
         [Fact]
         public virtual void UpdateRowsOperation_simple_key()
             => Generate(
-                new UpdateOperation
-                {
-                    Table = "People",
-                    KeyColumns = new[] { "Id" },
-                    KeyValues = new object[,]
-                    {
-                        { 1 },
-                        { 4 }
-                    },
-                    Columns = new[] { "Full Name" },
-                    Values = new object[,]
-                    {
-                        { "Daenerys Stormborn" },
-                        { "Homeless Harry Strickland" }
-                    }
-                });
+                new UpdateOperation(
+                    "People",
+                    new[] { "Id" },
+                    new object[] { 1 },
+                    new[] { "Full Name" },
+                    new object[] { "Daenerys Stormborn" }));
 
         [Fact]
         public virtual void UpdateRowsOperation_composite_key()
             => Generate(
-                new UpdateOperation
-                {
-                    Table = "People",
-                    KeyColumns = new[] { "Id", "Last Name" },
-                    KeyValues = new object[,]
-                    {
-                        { 0, null },
-                        { 4, "Strickland" }
-                    },
-                    Columns = new[] { "First Name" },
-                    Values = new object[,]
-                    {
-                        { "Hodor" },
-                        { "Homeless Harry" }
-                    }
-                });
+                new UpdateOperation(
+                    "People",
+                    new[] { "Id", "Last Name" },
+                    new object[] { 0, null },
+                    new[] { "First Name" },
+                    new object[] { "Hodor" }));
 
         [Fact]
         public virtual void UpdateRowsOperation_multiple_columns()
             => Generate(
-                new UpdateOperation
-                {
-                    Table = "People",
-                    KeyColumns = new[] { "Id" },
-                    KeyValues = new object[,]
-                    {
-                        { 1 },
-                        { 4 }
-                    },
-                    Columns = new[] { "First Name", "Nickname" },
-                    Values = new object[,]
-                    {
-                        { "Daenerys", "Dany" },
-                        { "Harry", "Homeless" }
-                    }
-                });
+                new UpdateOperation(
+                    "People",
+                    new[] { "Id" },
+                    new object[] { 1 },
+                    new[] { "First Name", "Nickname" },
+                    new object[] { "Daenerys", "Dany" }));
 
         private readonly TestHelpers _testHelpers;
 

@@ -58,13 +58,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             typeof(CreateIndexOperation)
         };
 
-        private static readonly Type[] _dataMotionOperationTypes =
-        {
-            typeof(InsertOperation),
-            typeof(UpdateOperation),
-            typeof(DeleteOperation)
-        };
-
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -227,7 +220,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 {
                     renameTableOperations.Add(operation);
                 }
-                else if (_dataMotionOperationTypes.Contains(type))
+                else if (type == typeof(ModificationOperation))
                 {
                     dataMotionOperations.Add(operation);
                 }
@@ -1223,22 +1216,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 }
             }
 
-            var operations = CurrentContext.ChangeTracker.GetMigrationOperations();
-            foreach (var o in operations)
-            {
-                if (o.EntityState == EntityState.Added)
-                {
-                    yield return new InsertOperation();
-                }
-                else if (o.EntityState == EntityState.Deleted)
-                {
-                    yield return new DeleteOperation();
-                }
-                else if (o.EntityState == EntityState.Modified)
-                {
-                    yield return new UpdateOperation();
-                }
-            }
+            var entries = CurrentContext.ChangeTracker.GetChanges();
+            var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>()).GetChanges(entries);
+            return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
         }
 
         private static object NewEntityWithValues(IEntityType target, object obj)

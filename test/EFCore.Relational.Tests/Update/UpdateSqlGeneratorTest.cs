@@ -30,7 +30,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             {
             }
 
-            protected override void AppendIdentityWhereCondition(StringBuilder commandStringBuilder, ColumnModification columnModification)
+            protected override void AppendIdentityWhereCondition(StringBuilder commandStringBuilder, ColumnModificationBase columnModification)
                 => commandStringBuilder
                     .Append(SqlGenerationHelper.DelimitIdentifier(columnModification.ColumnName))
                     .Append(" = ")

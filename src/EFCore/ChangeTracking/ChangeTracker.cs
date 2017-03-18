@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Utilities;
+using Microsoft.EntityFrameworkCore.Update;
 
 namespace Microsoft.EntityFrameworkCore.ChangeTracking
 {
@@ -230,7 +231,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking
         /// 
         /// </summary>
         /// <returns></returns>
-        public List<InternalEntityEntry> GetMigrationOperations()
+        public IReadOnlyList<IUpdateEntry> GetChanges()
         {
             return StateManager.GetMigrationOperationsToRun();
         }

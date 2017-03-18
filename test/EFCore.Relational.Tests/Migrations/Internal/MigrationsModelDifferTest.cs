@@ -5181,7 +5181,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 operations =>
                 {
                     Assert.Equal(1, operations.Count);
-                    Assert.Equal(1, operations.OfType<InsertOperation>().Count());
+                    Assert.Equal(1, operations.OfType<ModificationOperation>().Count());
                 });
         }
 
@@ -5210,7 +5210,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 operations =>
                 {
                     Assert.Equal(1, operations.Count);
-                    Assert.Equal(1, operations.OfType<DeleteOperation>().Count());
+                    Assert.Equal(1, operations.OfType<ModificationOperation>().Count());
                 });
         }
 
@@ -5244,7 +5244,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 operations =>
                 {
                     Assert.Equal(2, operations.Count);
-                    Assert.Equal(2, operations.OfType<UpdateOperation>().Count());
+                    Assert.Equal(2, operations.OfType<ModificationOperation>().Count());
                 });
         }
 
@@ -5282,9 +5282,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 operations =>
                 {
                     Assert.Equal(4, operations.Count);
-                    Assert.Equal(1, operations.OfType<InsertOperation>().Count());
-                    Assert.Equal(1, operations.OfType<DeleteOperation>().Count());
-                    Assert.Equal(2, operations.OfType<UpdateOperation>().Count());
+                    Assert.Equal(4, operations.OfType<ModificationOperation>().Count());
                 });
         }
 

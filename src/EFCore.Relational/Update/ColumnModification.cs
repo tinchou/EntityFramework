@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Update
 {
-    public class ColumnModification
+    public class ColumnModification : ColumnModificationBase
     {
         private string _parameterName;
         private string _originalParameterName;
@@ -24,20 +24,24 @@ namespace Microsoft.EntityFrameworkCore.Update
             bool isKey,
             bool isCondition,
             bool isConcurrencyToken)
+        : base(
+            Check.NotNull(propertyAnnotations, nameof(propertyAnnotations)).ColumnName,
+            null,
+            null,
+            null,
+            isRead,
+            isWrite,
+            isKey,
+            isCondition,
+            isCondition && isConcurrencyToken)
         {
             Check.NotNull(entry, nameof(entry));
             Check.NotNull(property, nameof(property));
-            Check.NotNull(propertyAnnotations, nameof(propertyAnnotations));
             Check.NotNull(generateParameterName, nameof(generateParameterName));
 
             Entry = entry;
             Property = property;
-            ColumnName = propertyAnnotations.ColumnName;
             _generateParameterName = generateParameterName;
-            IsRead = isRead;
-            IsWrite = isWrite;
-            IsKey = isKey;
-            IsCondition = isCondition;
             IsConcurrencyToken = isConcurrencyToken;
         }
 
@@ -45,34 +49,23 @@ namespace Microsoft.EntityFrameworkCore.Update
 
         public virtual IProperty Property { get; }
 
-        public virtual bool IsRead { get; }
-
-        public virtual bool IsWrite { get; }
-
-        public virtual bool IsCondition { get; }
-
         public virtual bool IsConcurrencyToken { get; }
-
-        public virtual bool IsKey { get; }
-
-        public virtual bool UseOriginalValueParameter => IsCondition && IsConcurrencyToken;
 
         public virtual bool UseCurrentValueParameter => IsWrite || (IsCondition && !IsConcurrencyToken);
 
-        public virtual string ParameterName
+        public override string ParameterName
             => _parameterName ?? (_parameterName = _generateParameterName());
 
-        public virtual string OriginalParameterName
+        public override string OriginalParameterName
             => _originalParameterName ?? (_originalParameterName = _generateParameterName());
 
-        public virtual string ColumnName { get; }
+        public override object OriginalValue => Entry.GetOriginalValue(Property);
 
-        public virtual object OriginalValue => Entry.GetOriginalValue(Property);
+        public override object Value => Entry.GetCurrentValue(Property);
 
-        public virtual object Value
+        public virtual void SetValue(object value)
         {
-            get { return Entry.GetCurrentValue(Property); }
-            [param: CanBeNull] set { Entry.SetCurrentValue(Property, value); }
+            Entry.SetCurrentValue(Property, value);
         }
     }
 }

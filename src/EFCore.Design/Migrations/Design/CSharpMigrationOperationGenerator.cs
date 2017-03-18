@@ -1407,37 +1407,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                     .AppendLine(" },");
 
                 builder
-                    .AppendLine("values: new object[,]")
-                    .AppendLine("{");
-                using (builder.Indent())
-                {
-                    var rowCount = operation.Values.GetLength(0);
-                    var valueCount = operation.Values.GetLength(1);
-                    for (var i = 0; i < rowCount; i++)
-                    {
-                        if (i != 0)
-                        {
-                            builder.AppendLine(",");
-                        }
-
-                        builder.Append("{ ");
-                        for (var j = 0; j < valueCount; j++)
-                        {
-                            if (j != 0)
-                            {
-                                builder.Append(", ");
-                            }
-
-                            builder.Append(_code.UnknownLiteral(operation.Values[i, j]));
-                        }
-
-                        builder.Append(" }");
-                    }
-                }
-
-                builder
-                    .AppendLine()
-                    .Append("})");
+                    .Append("values: new object[] { ")
+                    .Append(string.Join(", ", operation.Values.Select(_code.UnknownLiteral)))
+                    .Append(" })");
             }
         }
 
@@ -1469,37 +1441,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                     .AppendLine(" },");
 
                 builder
-                    .AppendLine("keyValues: new object[,]")
-                    .AppendLine("{");
-                using (builder.Indent())
-                {
-                    var rowCount = operation.KeyValues.GetLength(0);
-                    var valueCount = operation.KeyValues.GetLength(1);
-                    for (var i = 0; i < rowCount; i++)
-                    {
-                        if (i != 0)
-                        {
-                            builder.AppendLine(",");
-                        }
-
-                        builder.Append("{ ");
-                        for (var j = 0; j < valueCount; j++)
-                        {
-                            if (j != 0)
-                            {
-                                builder.Append(", ");
-                            }
-
-                            builder.Append(_code.UnknownLiteral(operation.KeyValues[i, j]));
-                        }
-
-                        builder.Append(" }");
-                    }
-                }
-
-                builder
-                    .AppendLine()
-                    .Append("})");
+                    .Append("keyValues: new object[] { ")
+                    .Append(string.Join(", ", operation.KeyValues.Select(_code.UnknownLiteral)))
+                    .Append(" })");
             }
         }
 
@@ -1531,36 +1475,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                     .AppendLine(" },");
 
                 builder
-                    .AppendLine("keyValues: new object[,]")
-                    .AppendLine("{");
-                using (builder.Indent())
-                {
-                    var rowCount = operation.KeyValues.GetLength(0);
-                    var valueCount = operation.KeyValues.GetLength(1);
-                    for (var i = 0; i < rowCount; i++)
-                    {
-                        if (i != 0)
-                        {
-                            builder.AppendLine(",");
-                        }
-
-                        builder.Append("{ ");
-                        for (var j = 0; j < valueCount; j++)
-                        {
-                            if (j != 0)
-                            {
-                                builder.Append(", ");
-                            }
-
-                            builder.Append(_code.UnknownLiteral(operation.KeyValues[i, j]));
-                        }
-
-                        builder.Append(" }");
-                    }
-                }
-                builder
-                    .AppendLine()
-                    .AppendLine("},");
+                    .Append("keyValues: new object[] { ")
+                    .Append(string.Join(", ", operation.KeyValues.Select(_code.UnknownLiteral)))
+                    .AppendLine(" },");
 
                 builder
                     .Append("columns: new[] { ")
@@ -1568,37 +1485,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                     .AppendLine(" },");
 
                 builder
-                    .AppendLine("values: new object[,]")
-                    .AppendLine("{");
-                using (builder.Indent())
-                {
-                    var rowCount = operation.Values.GetLength(0);
-                    var valueCount = operation.Values.GetLength(1);
-                    for (var i = 0; i < rowCount; i++)
-                    {
-                        if (i != 0)
-                        {
-                            builder.AppendLine(",");
-                        }
-
-                        builder.Append("{ ");
-                        for (var j = 0; j < valueCount; j++)
-                        {
-                            if (j != 0)
-                            {
-                                builder.Append(", ");
-                            }
-
-                            builder.Append(_code.UnknownLiteral(operation.Values[i, j]));
-                        }
-
-                        builder.Append(" }");
-                    }
-                }
-
-                builder
-                    .AppendLine()
-                    .Append("})");
+                    .Append("values: new object[] { ")
+                    .Append(string.Join(", ", operation.Values.Select(_code.UnknownLiteral)))
+                    .Append(" })");
             }
         }
 

@@ -4,6 +4,7 @@
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Migrations
@@ -45,22 +46,26 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         ///     </para>
         /// </summary>
         /// <param name="commandBuilderFactory"> The command builder factory. </param>
+        /// <param name="updateSqlGenerator"> High level SQL generator. </param>
         /// <param name="sqlGenerationHelper"> Helpers for SQL generation. </param>
         /// <param name="typeMapper"> The type mapper being used. </param>
         /// <param name="annotations"> Helpers for obtaining relational metadata. </param>
         public MigrationsSqlGeneratorDependencies(
             [NotNull] IRelationalCommandBuilderFactory commandBuilderFactory,
+            [NotNull] IUpdateSqlGenerator updateSqlGenerator,
             [NotNull] ISqlGenerationHelper sqlGenerationHelper,
             [NotNull] IRelationalTypeMapper typeMapper,
             [NotNull] IRelationalAnnotationProvider annotations)
         {
             Check.NotNull(commandBuilderFactory, nameof(commandBuilderFactory));
+            Check.NotNull(updateSqlGenerator, nameof(updateSqlGenerator));
             Check.NotNull(sqlGenerationHelper, nameof(sqlGenerationHelper));
             Check.NotNull(typeMapper, nameof(typeMapper));
             Check.NotNull(annotations, nameof(annotations));
 
             CommandBuilderFactory = commandBuilderFactory;
             SqlGenerationHelper = sqlGenerationHelper;
+            UpdateSqlGenerator = updateSqlGenerator;
             TypeMapper = typeMapper;
             Annotations = annotations;
         }
@@ -69,6 +74,11 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         ///     The command builder factory.
         /// </summary>
         public IRelationalCommandBuilderFactory CommandBuilderFactory { get; }
+
+        /// <summary>
+        ///     High level SQL generator.
+        /// </summary>
+        public IUpdateSqlGenerator UpdateSqlGenerator { get; }
 
         /// <summary>
         ///     Helpers for SQL generation.
@@ -93,6 +103,20 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         public MigrationsSqlGeneratorDependencies With([NotNull] IRelationalCommandBuilderFactory commandBuilderFactory)
             => new MigrationsSqlGeneratorDependencies(
                 commandBuilderFactory,
+                UpdateSqlGenerator,
+                SqlGenerationHelper,
+                TypeMapper,
+                Annotations);
+
+        /// <summary>
+        ///     Clones this dependency parameter object with one service replaced.
+        /// </summary>
+        /// <param name="updateSqlGenerator"> A replacement for the current dependency of this type. </param>
+        /// <returns> A new parameter object with the given service replaced. </returns>
+        public MigrationsSqlGeneratorDependencies With([NotNull] IUpdateSqlGenerator updateSqlGenerator)
+            => new MigrationsSqlGeneratorDependencies(
+                CommandBuilderFactory,
+                updateSqlGenerator,
                 SqlGenerationHelper,
                 TypeMapper,
                 Annotations);
@@ -105,6 +129,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         public MigrationsSqlGeneratorDependencies With([NotNull] ISqlGenerationHelper sqlGenerationHelper)
             => new MigrationsSqlGeneratorDependencies(
                 CommandBuilderFactory,
+                UpdateSqlGenerator,
                 sqlGenerationHelper,
                 TypeMapper,
                 Annotations);
@@ -117,6 +142,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         public MigrationsSqlGeneratorDependencies With([NotNull] IRelationalTypeMapper typeMapper)
             => new MigrationsSqlGeneratorDependencies(
                 CommandBuilderFactory,
+                UpdateSqlGenerator,
                 SqlGenerationHelper,
                 typeMapper,
                 Annotations);
@@ -129,6 +155,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations
         public MigrationsSqlGeneratorDependencies With([NotNull] IRelationalAnnotationProvider annotations)
             => new MigrationsSqlGeneratorDependencies(
                 CommandBuilderFactory,
+                UpdateSqlGenerator,
                 SqlGenerationHelper,
                 TypeMapper,
                 annotations);

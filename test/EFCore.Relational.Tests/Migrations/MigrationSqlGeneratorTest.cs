@@ -310,28 +310,13 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations
                 Sql);
         }
 
-        public override void InsertRowsOperation()
+        public override void InsertOperation_one_row()
         {
-            base.InsertRowsOperation();
+            base.InsertOperation_one_row();
 
             Assert.Equal(
                 "INSERT INTO \"People\" (\"Id\", \"Full Name\")" + EOL +
-                "VALUES (0, NULL)," + EOL +
-                "       (1, 'Daenerys Targaryen')," + EOL +
-                "       (2, 'John Snow')," + EOL +
-                "       (3, 'Arya Stark')," + EOL +
-                "       (4, 'Harry Strickland');" + EOL,
-                Sql);
-        }
-
-        public override void DeleteRowsOperation_simple_key()
-        {
-            base.DeleteRowsOperation_simple_key();
-
-            Assert.Equal(
-                "DELETE FROM \"People\"" + EOL +
-                "WHERE (\"Id\" = 2) OR" + EOL +
-                "      (\"Id\" = 4);" + EOL,
+                "VALUES (1, 'Daenerys Targaryen');" + EOL,
                 Sql);
         }
 
@@ -339,10 +324,11 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations
         {
             base.DeleteRowsOperation_composite_key();
 
+            // TODO remove rowcount
             Assert.Equal(
                 "DELETE FROM \"People\"" + EOL +
-                "WHERE (\"First Name\" = 'Hodor' AND \"Last Name\" IS NULL) OR" + EOL +
-                "      (\"First Name\" = 'Daenerys' AND \"Last Name\" = 'Targaryen');" + EOL,
+                "WHERE \"Id1\" = 2 AND \"Id2\" = 'John Snow';" + EOL +
+                "SELECT provider_specific_rowcount();" + EOL + EOL,
                 Sql);
         }
 
@@ -350,15 +336,11 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations
         {
             base.UpdateRowsOperation_simple_key();
 
+            // TODO remove rowcount
             Assert.Equal(
-                "UPDATE \"People\"" + EOL +
-                "SET \"Full Name\" = 'Daenerys Stormborn'" + EOL +
-                "WHERE (\"Id\" = 1);" + EOL +
-                "GO" + EOL +
-                EOL +
-                "UPDATE \"People\"" + EOL +
-                "SET \"Full Name\" = 'Homeless Harry Strickland'" + EOL +
-                "WHERE (\"Id\" = 4);" + EOL,
+                "UPDATE \"People\" SET \"Full Name\" = 'Daenerys Stormborn'" + EOL +
+                "WHERE \"Id\" = 1;" + EOL +
+                "SELECT provider_specific_rowcount();" + EOL + EOL,
                 Sql);
         }
 
@@ -366,15 +348,11 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations
         {
             base.UpdateRowsOperation_composite_key();
 
+            // TODO remove rowcount
             Assert.Equal(
-                "UPDATE \"People\"" + EOL +
-                "SET \"First Name\" = 'Hodor'" + EOL +
-                "WHERE (\"Id\" = 0 AND \"Last Name\" IS NULL);" + EOL +
-                "GO" + EOL +
-                EOL +
-                "UPDATE \"People\"" + EOL +
-                "SET \"First Name\" = 'Homeless Harry'" + EOL +
-                "WHERE (\"Id\" = 4 AND \"Last Name\" = 'Strickland');" + EOL,
+                "UPDATE \"People\" SET \"First Name\" = 'Hodor'" + EOL +
+                "WHERE \"Id\" = 0 AND \"Last Name\" IS NULL;" + EOL +
+                "SELECT provider_specific_rowcount();" + EOL + EOL,
                 Sql);
         }
 
@@ -382,17 +360,11 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations
         {
             base.UpdateRowsOperation_multiple_columns();
 
+            // TODO remove rowcount
             Assert.Equal(
-                "UPDATE \"People\"" + EOL +
-                "SET \"First Name\" = 'Daenerys'," + EOL +
-                "    \"Nickname\" = 'Dany'" + EOL +
-                "WHERE (\"Id\" = 1);" + EOL +
-                "GO" + EOL +
-                EOL +
-                "UPDATE \"People\"" + EOL +
-                "SET \"First Name\" = 'Harry'," + EOL +
-                "    \"Nickname\" = 'Homeless'" + EOL +
-                "WHERE (\"Id\" = 4);" + EOL,
+                "UPDATE \"People\" SET \"First Name\" = 'Daenerys', \"Nickname\" = 'Dany'" + EOL +
+                "WHERE \"Id\" = 1;" + EOL +
+                "SELECT provider_specific_rowcount();" + EOL + EOL,
                 Sql);
         }
 

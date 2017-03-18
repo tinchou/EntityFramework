@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using Moq;
 using Xunit;
+using Microsoft.EntityFrameworkCore.Update;
 
 namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
 {
@@ -115,7 +116,7 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
                             { typeof(SqliteOptionsExtension), new SqliteOptionsExtension() }
                         }),
                     new MigrationsModelDiffer(
-                        null,
+                        Mock.Of<DbContext>(),
                         new SqliteTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqliteMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),
@@ -129,6 +130,7 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
                                     new FakeInterceptingLogger<LoggerCategory.Database.DataReader>(),
                                     new DiagnosticListener("Fake")),
                                 typeMapper),
+                            Mock.Of<IUpdateSqlGenerator>(),
                             new SqliteSqlGenerationHelper(new RelationalSqlGenerationHelperDependencies()),
                             typeMapper,
                             annotationsProvider)),

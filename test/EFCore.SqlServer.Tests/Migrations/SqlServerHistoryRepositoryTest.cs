@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using Moq;
 using Xunit;
+using Microsoft.EntityFrameworkCore.Update;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
 {
@@ -154,29 +155,28 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
                     new DiagnosticListener("Fake")),
                 typeMapper);
 
-            var options = new DbContextOptions<DbContext>(
+            return new SqlServerHistoryRepository(
+                new HistoryRepositoryDependencies(
+                    Mock.Of<IRelationalDatabaseCreator>(),
+                    Mock.Of<IRawSqlCommandBuilder>(),
+                    Mock.Of<ISqlServerConnection>(),
+                    new DbContextOptions<DbContext>(
                         new Dictionary<Type, IDbContextOptionsExtension>
                         {
                             {
                                 typeof(SqlServerOptionsExtension),
                                 new SqlServerOptionsExtension().WithMigrationsHistoryTableSchema(schema)
                             }
-                        });
-
-            return new SqlServerHistoryRepository(
-                new HistoryRepositoryDependencies(
-                    Mock.Of<IRelationalDatabaseCreator>(),
-                    Mock.Of<IRawSqlCommandBuilder>(),
-                    Mock.Of<ISqlServerConnection>(),
-                    options,
+                        }),
                     new MigrationsModelDiffer(
-                        new DbContext(options),
+                        Mock.Of<DbContext>(),
                         new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),
                     new SqlServerMigrationsSqlGenerator(
                         new MigrationsSqlGeneratorDependencies(
                             commandBuilderFactory,
+                            Mock.Of<IUpdateSqlGenerator>(),
                             new SqlServerSqlGenerationHelper(new RelationalSqlGenerationHelperDependencies()),
                             typeMapper,
                             annotationsProvider),

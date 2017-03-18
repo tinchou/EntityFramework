@@ -634,45 +634,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            if (operation.Values.Length == 0)
-            {
-                return;
-            }
+            var mybuilder = new System.Text.StringBuilder();
+            Dependencies.UpdateSqlGenerator.AppendInsertOperation(
+                mybuilder,
+                operation.ModificationCommand,
+                0);
 
-            builder
-                .Append("INSERT INTO ")
-                .Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
-                .Append(" (")
-                .Append(ColumnList(operation.Columns))
-                .AppendLine(")")
-                .Append("VALUES ");
-
-            var rowCount = operation.Values.GetLength(0);
-            var valueCount = operation.Values.GetLength(1);
-            for (var i = 0; i < rowCount; i++)
-            {
-                if (i != 0)
-                {
-                    builder
-                        .AppendLine(",")
-                        .Append("       ");
-                }
-
-                builder.Append("(");
-                for (var j = 0; j < valueCount; j++)
-                {
-                    if (j != 0)
-                    {
-                        builder.Append(", ");
-                    }
-
-                    builder.Append(Dependencies.SqlGenerationHelper.GenerateLiteral(operation.Values[i, j]));
-                }
-
-                builder.Append(")");
-            }
-
-            builder.AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
+            builder.Append(mybuilder.ToString());
             EndStatement(builder);
         }
 
@@ -684,55 +652,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            if (operation.KeyValues.Length == 0)
-            {
-                return;
-            }
+            var mybuilder = new System.Text.StringBuilder();
+            Dependencies.UpdateSqlGenerator.AppendDeleteOperation(
+                mybuilder,
+                operation.ModificationCommand,
+                0);
 
-            builder
-                .Append("DELETE FROM ")
-                .AppendLine(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema));
-
-            builder.Append("WHERE ");
-
-            var rowCount = operation.KeyValues.GetLength(0);
-            var valueCount = operation.KeyValues.GetLength(1);
-            for (var i = 0; i < rowCount; i++)
-            {
-                if (i != 0)
-                {
-                    builder
-                        .AppendLine(" OR")
-                        .Append("      ");
-                }
-
-                builder.Append("(");
-                for (var j = 0; j < valueCount; j++)
-                {
-                    if (j != 0)
-                    {
-                        builder.Append(" AND ");
-                    }
-
-                    builder.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.KeyColumns[j]));
-
-                    var value = operation.KeyValues[i, j];
-                    if (value == null)
-                    {
-                        builder.Append(" IS NULL");
-                    }
-                    else
-                    {
-                        builder
-                            .Append(" = ")
-                            .Append(Dependencies.SqlGenerationHelper.GenerateLiteral(value));
-                    }
-                }
-
-                builder.Append(")");
-            }
-
-            builder.AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
+            builder.Append(mybuilder.ToString());
             EndStatement(builder);
         }
 
@@ -744,67 +670,14 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            if (operation.Values.Length == 0)
-            {
-                return;
-            }
+            var mybuilder = new System.Text.StringBuilder();
+            Dependencies.UpdateSqlGenerator.AppendUpdateOperation(
+                mybuilder,
+                operation.ModificationCommand,
+                0);
 
-            var rowCount = operation.Values.GetLength(0);
-            var valueCount = operation.Values.GetLength(1);
-            var keyValueCount = operation.KeyValues.GetLength(1);
-            for (var i = 0; i < rowCount; i++)
-            {
-                builder
-                    .Append("UPDATE ")
-                    .AppendLine(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
-                    .Append("SET ");
-
-                for (var j = 0; j < valueCount; j++)
-                {
-                    if (j != 0)
-                    {
-                        builder
-                            .AppendLine(",")
-                            .Append("    ");
-                    }
-
-                    builder.Append(
-                        Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Columns[j]) +
-                        " = " +
-                        Dependencies.SqlGenerationHelper.GenerateLiteral(operation.Values[i, j]));
-                }
-
-                builder
-                    .AppendLine()
-                    .Append("WHERE (");
-                for (var j = 0; j < keyValueCount; j++)
-                {
-                    if (j != 0)
-                    {
-                        builder.Append(" AND ");
-                    }
-
-                    builder.Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.KeyColumns[j]));
-
-                    var value = operation.KeyValues[i, j];
-                    if (value == null)
-                    {
-                        builder.Append(" IS NULL");
-                    }
-                    else
-                    {
-                        builder
-                            .Append(" = ")
-                            .Append(Dependencies.SqlGenerationHelper.GenerateLiteral(value));
-                    }
-                }
-
-                builder
-                    .Append(")")
-                    .AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
-
-                EndStatement(builder);
-            }
+            builder.Append(mybuilder.ToString());
+            EndStatement(builder);
         }
 
         protected virtual void SequenceOptions(

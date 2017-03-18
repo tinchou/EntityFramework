@@ -1941,39 +1941,23 @@ namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
         public void InsertOperation_all_args()
         {
             Test(
-                new InsertOperation
-                {
-                    Schema = "dbo",
-                    Table = "People",
-                    Columns = new[] { "Id", "Full Name" },
-                    Values = new object[,]
-                    {
-                        { 0, null },
-                        { 1, "Daenerys Targaryen" },
-                        { 2, "John Snow" },
-                        { 3, "Arya Stark" },
-                        { 4, "Harry Strickland" }
-                    }
-                },
+                new InsertOperation(
+                    "dbo",
+                    "People",
+                    new[] { "Id", "Full Name" },
+                    new object[] { 1, "Daenerys Targaryen" }),
                 "mb.Insert(" + EOL +
                 "    schema: \"dbo\"," + EOL +
                 "    table: \"People\"," + EOL +
                 "    columns: new[] { \"Id\", \"Full Name\" }," + EOL +
-                "    values: new object[,]" + EOL +
-                "    {" + EOL +
-                "        { 0, null }," + EOL +
-                "        { 1, \"Daenerys Targaryen\" }," + EOL +
-                "        { 2, \"John Snow\" }," + EOL +
-                "        { 3, \"Arya Stark\" }," + EOL +
-                "        { 4, \"Harry Strickland\" }" + EOL +
-                "    });",
+                "    values: new object[] { 1, \"Daenerys Targaryen\" });",
                 o =>
                 {
                     Assert.Equal("dbo", o.Schema);
                     Assert.Equal("People", o.Table);
                     Assert.Equal(2, o.Columns.Length);
-                    Assert.Equal(10, o.Values.Length);
-                    Assert.Equal("John Snow", o.Values[2, 1]);
+                    Assert.Equal(2, o.Values.Length);
+                    Assert.Equal("Daenerys Targaryen", o.Values[1]);
                 });
         }
 
@@ -1981,39 +1965,23 @@ namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
         public void DeleteOperation_all_args()
         {
             Test(
-                new DeleteOperation
-                {
-                    Schema = "dbo",
-                    Table = "People",
-                    KeyColumns = new[] { "First Name", "Last Name" },
-                    KeyValues = new object[,]
-                    {
-                        { "Hodor", null },
-                        { "Daenerys", "Targaryen" },
-                        { "John", "Snow" },
-                        { "Arya", "Stark" },
-                        { "Harry", "Strickland" }
-                    }
-                },
+                new DeleteOperation(
+                    "dbo",
+                    "People",
+                    new[] { "First Name", "Last Name" },
+                    new object[] { "John", "Snow" }),
                 "mb.Delete(" + EOL +
                 "    schema: \"dbo\"," + EOL +
                 "    table: \"People\"," + EOL +
                 "    keyColumns: new[] { \"First Name\", \"Last Name\" }," + EOL +
-                "    keyValues: new object[,]" + EOL +
-                "    {" + EOL +
-                "        { \"Hodor\", null }," + EOL +
-                "        { \"Daenerys\", \"Targaryen\" }," + EOL +
-                "        { \"John\", \"Snow\" }," + EOL +
-                "        { \"Arya\", \"Stark\" }," + EOL +
-                "        { \"Harry\", \"Strickland\" }" + EOL +
-                "    });",
+                "    keyValues: new object[] { \"John\", \"Snow\" });",
                 o =>
                 {
                     Assert.Equal("dbo", o.Schema);
                     Assert.Equal("People", o.Table);
                     Assert.Equal(2, o.KeyColumns.Length);
-                    Assert.Equal(10, o.KeyValues.Length);
-                    Assert.Equal("Snow", o.KeyValues[2, 1]);
+                    Assert.Equal(2, o.KeyValues.Length);
+                    Assert.Equal("Snow", o.KeyValues[1]);
                 });
         }
 
@@ -2021,48 +1989,30 @@ namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
         public void UpdateOperation_all_args()
         {
             Test(
-                new UpdateOperation
-                {
-                    Schema = "dbo",
-                    Table = "People",
-                    KeyColumns = new[] { "First Name", "Last Name" },
-                    KeyValues = new object[,]
-                    {
-                        { "Hodor", null },
-                        { "Daenerys", "Targaryen" }
-                    },
-                    Columns = new[] { "Birthplace", "House Allegiance", "Culture" },
-                    Values = new object[,]
-                    {
-                        { "Winterfell", "Stark", "Northmen" },
-                        { "Dragonstone", "Targaryen", "Valyrian" }
-                    }
-                },
+                new UpdateOperation(
+                    "dbo",
+                    "People",
+                    new[] { "First Name", "Last Name" },
+                    new object[] { "Daenerys", "Targaryen" },
+                    new[] { "Birthplace", "House Allegiance", "Culture" },
+                    new object[] { "Dragonstone", "Targaryen", "Valyrian" }),
                 "mb.Update(" + EOL +
                 "    schema: \"dbo\"," + EOL +
                 "    table: \"People\"," + EOL +
                 "    keyColumns: new[] { \"First Name\", \"Last Name\" }," + EOL +
-                "    keyValues: new object[,]" + EOL +
-                "    {" + EOL +
-                "        { \"Hodor\", null }," + EOL +
-                "        { \"Daenerys\", \"Targaryen\" }" + EOL +
-                "    }," + EOL +
+                "    keyValues: new object[] { \"Daenerys\", \"Targaryen\" }," + EOL +
                 "    columns: new[] { \"Birthplace\", \"House Allegiance\", \"Culture\" }," + EOL +
-                "    values: new object[,]" + EOL +
-                "    {" + EOL +
-                "        { \"Winterfell\", \"Stark\", \"Northmen\" }," + EOL +
-                "        { \"Dragonstone\", \"Targaryen\", \"Valyrian\" }" + EOL +
-                "    });",
+                "    values: new object[] { \"Dragonstone\", \"Targaryen\", \"Valyrian\" });",
                 o =>
                 {
                     Assert.Equal("dbo", o.Schema);
                     Assert.Equal("People", o.Table);
                     Assert.Equal(2, o.KeyColumns.Length);
-                    Assert.Equal(4, o.KeyValues.Length);
-                    Assert.Equal("Daenerys", o.KeyValues[1, 0]);
+                    Assert.Equal(2, o.KeyValues.Length);
+                    Assert.Equal("Daenerys", o.KeyValues[0]);
                     Assert.Equal(3, o.Columns.Length);
-                    Assert.Equal(6, o.Values.Length);
-                    Assert.Equal("Targaryen", o.Values[1, 1]);
+                    Assert.Equal(3, o.Values.Length);
+                    Assert.Equal("Targaryen", o.Values[1]);
                 });
         }
 
