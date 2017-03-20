@@ -141,13 +141,37 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 modelBuilder => modelBuilder.Entity("Fox").ToTable("Fox", "dbo"),
                 _ => { },
                 operations =>
-                    {
-                        Assert.Equal(1, operations.Count);
+                {
+                    Assert.Equal(1, operations.Count);
 
-                        var operation = Assert.IsType<DropTableOperation>(operations[0]);
-                        Assert.Equal("Fox", operation.Name);
-                        Assert.Equal("dbo", operation.Schema);
-                    });
+                    var operation = Assert.IsType<DropTableOperation>(operations[0]);
+                    Assert.Equal("Fox", operation.Name);
+                    Assert.Equal("dbo", operation.Schema);
+                });
+        }
+
+        [Fact]
+        public void Drop_table_with_seed_data()
+        {
+            Execute(
+                source => source.Entity("Zebra",
+                    x =>
+                    {
+                        x.ToTable("Zebra", "dbo");
+                        x.Property<int>("Id");
+                        x.Property<string>("Name").HasColumnType("nvarchar(30)");
+                        x.SeedData(
+                            new { Id = 42, Name = "equal" });
+                    }),
+                _ => { },
+                operations =>
+                {
+                    Assert.Equal(1, operations.Count);
+
+                    var operation = Assert.IsType<DropTableOperation>(operations[0]);
+                    Assert.Equal("Zebra", operation.Name);
+                    Assert.Equal("dbo", operation.Schema);
+                });
         }
 
         [Fact]
@@ -457,6 +481,33 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         }
 
         [Fact]
+        public void Rename_entity_type_with_seed_data()
+        {
+            Execute(
+                source => source.Entity(
+                    "EntityWithIdWrongName",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.HasKey("Id").HasName("PK_EntityId");
+                        x.SeedData(
+                            new { Id = 42 },
+                            new { Id = 27 });
+                    }),
+                target => target.Entity<EntityWithId>(
+                    x =>
+                    {
+                        x.ToTable("EntityWithIdWrongName");
+                        x.Property<int>("Id");
+                        x.HasKey("Id").HasName("PK_EntityId");
+                        x.SeedData(
+                            new { Id = 42 },
+                            new { Id = 27 });
+                    }),
+                Assert.Empty);
+        }
+
+        [Fact]
         public void Add_column()
         {
             Execute(
@@ -689,21 +740,48 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 source => source.Entity(
                     "Buffalo",
                     x =>
-                        {
-                            x.ToTable("Buffalo", "dbo");
-                            x.Property<int>("Id");
-                            x.HasKey("Id");
-                            x.Property<string>("BuffaloName").HasColumnType("nvarchar(30)");
-                        }),
+                    {
+                        x.ToTable("Buffalo", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<string>("BuffaloName").HasColumnType("nvarchar(30)");
+                    }),
                 target => target.Entity(
                     "Buffalo",
                     x =>
-                        {
-                            x.ToTable("Buffalo", "dbo");
-                            x.Property<int>("Id");
-                            x.HasKey("Id");
-                            x.Property<string>("Name").HasColumnName("BuffaloName").HasColumnType("nvarchar(30)");
-                        }),
+                    {
+                        x.ToTable("Buffalo", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<string>("Name").HasColumnName("BuffaloName").HasColumnType("nvarchar(30)");
+                    }),
+                Assert.Empty);
+        }
+
+        [Fact]
+        public void Rename_property_with_same_seed_data()
+        {
+            Execute(
+                target => target.Entity(nameof(EntityZebra),
+                    x =>
+                    {
+                        x.ToTable("Zebra", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<string>("ZebraName").HasColumnType("nvarchar(30)");
+                        x.SeedData(
+                            new { Id = 42, ZebraName = "equal" }); // unchanged
+                    }),
+                source => source.Entity<EntityZebra>(
+                    x =>
+                    {
+                        x.ToTable("Zebra", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<string>("Name").HasColumnName("ZebraName").HasColumnType("nvarchar(30)");
+                        x.SeedData(
+                            new { Id = 42, Name = "equal" }); // unchanged
+                    }),
                 Assert.Empty);
         }
 
@@ -3257,6 +3335,35 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         }
 
         [Fact]
+        public void Create_table_with_seed_data()
+        {
+            Execute(
+                _ => { },
+                target => target.Entity<EntityZebra>(
+                    x =>
+                    {
+                        x.ToTable("Zebra");
+                        x.Property<int>("Id");
+                        x.Property<string>("Name").HasColumnType("nvarchar(30)");
+                        x.SeedData(
+                            new EntityZebra { Id = 42, Name = "equal" });
+                    }),
+                operations =>
+                {
+                    Assert.Equal(2, operations.Count);
+
+                    var operation = Assert.IsType<CreateTableOperation>(operations[0]);
+                    Assert.Equal("Zebra", operation.Name);
+                    Assert.Null(operation.Schema);
+
+                    var insertOperation = Assert.IsType<ModificationOperation>(operations[1]);
+                    Assert.Equal("Zebra", insertOperation.ModificationCommand.TableName);
+                    Assert.Null(insertOperation.ModificationCommand.Schema);
+                    Assert.Equal(2, insertOperation.ModificationCommand.ColumnModificationsBase.Count);
+                });
+        }
+
+        [Fact]
         public void Add_property_on_subtype()
         {
             Execute(
@@ -5157,7 +5264,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         }
 
         [Fact]
-        public void SeedData_add()
+        public void SeedData_add_on_existing_table()
         {
             Execute(
                 source => source
@@ -5249,6 +5356,90 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         }
 
         [Fact]
+        public void SeedData_update_with_column_rename()
+        {
+            Execute(
+                source => source
+                    .Entity(
+                        nameof(EntityWithTwoProperties),
+                        x =>
+                        {
+                            x.Property<int>("IdBeforeRename");
+                            x.HasKey("IdBeforeRename");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { IdBeforeRename = 42, Value1 = 32, Value2 = "equal" }, // modified
+                                new { IdBeforeRename = 24, Value1 = 72, Value2 = "equal" }); // modified
+                        }),
+                target => target
+                    .Entity<EntityWithTwoProperties>(
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.HasKey("Id");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
+                        }),
+                operations =>
+                {
+                    Assert.Equal(3, operations.Count);
+                    Assert.Equal(1, operations.OfType<RenameColumnOperation>().Count());
+                    Assert.Equal(2, operations.OfType<ModificationOperation>().Count());
+                });
+        }
+
+        [Fact]
+        public void SeedData_update_with_table_rename()
+        {
+            Execute(
+                source => source
+                    .Entity<EntityWithTwoProperties>(
+                        x =>
+                        {
+                            x.ToTable("Cat", "dbo");
+                            x.Property<int>("Id");
+                            x.HasKey("Id").HasName("PK_Cat");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
+                                new { Id = 24, Value1 = 72, Value2 = "equal" }); // modified
+                        }),
+                target => target
+                    .Entity<EntityWithTwoProperties>(
+                        x =>
+                        {
+                            x.ToTable("Cats", "dbo");
+                            x.Property<int>("Id");
+                            x.HasKey("Id").HasName("PK_Cat");
+                            x.Property<int>("Value1");
+                            x.Property<string>("Value2");
+                            x.SeedData(
+                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
+                        }),
+                operations =>
+                {
+                    Assert.Equal(3, operations.Count);
+
+                    var operation = Assert.IsType<RenameTableOperation>(operations[0]);
+                    Assert.Equal("Cat", operation.Name);
+                    Assert.Equal("dbo", operation.Schema);
+                    Assert.Equal("Cats", operation.NewName);
+                    Assert.Null(operation.NewSchema);
+
+                    Assert.Equal(2, operations.OfType<ModificationOperation>().Count());
+                    var modificationOperation = Assert.IsType<ModificationOperation>(operations[1]);
+                    Assert.Equal("Cats", modificationOperation.ModificationCommand.TableName);
+                    Assert.Equal("dbo", modificationOperation.ModificationCommand.Schema);
+                });
+        }
+
+        [Fact]
         public void SeedData_all_operations()
         {
             Execute(
@@ -5286,11 +5477,22 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 });
         }
 
+        private class EntityWithId
+        {
+            public int Id { get; set; }
+        }
+
         private class EntityWithTwoProperties
         {
             public int Id { get; set; }
             public int Value1 { get; set; }
             public string Value2 { get; set; }
+        }
+
+        private class EntityZebra
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
         }
 
         protected override ModelBuilder CreateModelBuilder() => RelationalTestHelpers.Instance.CreateConventionBuilder();

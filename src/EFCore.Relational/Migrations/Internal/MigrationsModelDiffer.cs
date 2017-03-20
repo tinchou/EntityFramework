@@ -498,8 +498,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 .Concat(Diff(source.GetProperties(), target.GetProperties(), diffContext))
                 .Concat(Diff(source.GetKeys(), target.GetKeys(), diffContext))
                 .Concat(Diff(source.GetIndexes(), target.GetIndexes(), diffContext));
-                .Concat(DiffSeedData(source, target, diffContext));
             foreach (var operation in operations)
+            {
+                yield return operation;
+            }
+
+            // We do it after the previous operations so we can use the DiffContext property mappings
+            foreach (var operation in DiffSeedData(source, target, diffContext))
             {
                 yield return operation;
             }
@@ -556,6 +561,11 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             yield return createTableOperation;
 
             foreach (var operation in target.GetIndexes().SelectMany(i => Add(i, diffContext)))
+            {
+                yield return operation;
+            }
+
+            foreach (var operation in AddSeedData(target))
             {
                 yield return operation;
             }
@@ -1193,13 +1203,12 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             [NotNull] IEntityType target,
             [NotNull] DiffContext diffContext)
         {
-            var key = target.FindPrimaryKey();
-
             foreach (var sourceSeed in source.GetSeedData())
             {
-                CurrentContext.Entry(NewEntityWithValues(target, sourceSeed)).State = EntityState.Deleted;
+                CurrentContext.Entry(NewEntityWithValues(target, sourceSeed, diffContext)).State = EntityState.Deleted;
             }
 
+            var key = target.FindPrimaryKey();
             foreach (var targetSeed in target.GetSeedData())
             {
                 var typedTargetSeed = NewEntityWithValues(target, targetSeed);
@@ -1221,15 +1230,29 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
         }
 
-        private static object NewEntityWithValues(IEntityType target, object obj)
+        protected virtual IEnumerable<MigrationOperation> AddSeedData(IEntityType target)
+        {
+            foreach (var sourceSeed in target.GetSeedData())
+            {
+                CurrentContext.Entry(NewEntityWithValues(target, sourceSeed)).State = EntityState.Added;
+            }
+
+            var entries = CurrentContext.ChangeTracker.GetChanges();
+            var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>()).GetChanges(entries);
+            return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
+        }
+
+        private static object NewEntityWithValues(IEntityType target, object obj, DiffContext diffContext = null)
         {
             var instance = Activator.CreateInstance(target.ClrType);
-            foreach (var property in instance.GetType().GetRuntimeProperties())
+            foreach (var targetProperty in target.GetProperties())
             {
-                var getter = obj.GetType().GetAnyProperty(property.Name)?.FindGetterProperty();
+                var sourceProperty = diffContext?.FindSource(targetProperty) ?? targetProperty;
+                // we use sourceProperty.Name and not its getter because seed data may not have a CLR type
+                var getter = obj.GetType().GetAnyProperty(sourceProperty.Name)?.FindGetterProperty();
                 if (getter != null)
                 {
-                    property.SetValue(instance, getter.GetValue(obj));
+                    targetProperty.GetSetter().SetClrValue(instance, getter.GetValue(obj));
                 }
             }
 
