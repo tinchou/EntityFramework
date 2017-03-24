@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 
 namespace Microsoft.EntityFrameworkCore.Migrations.Internal
 {
@@ -63,12 +64,14 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public MigrationsModelDiffer(
-            [NotNull] DbContext currentContext,
+            [NotNull] IStateManager stateManager,
+            [NotNull] IDatabase relationalDatabase,
             [NotNull] IRelationalTypeMapper typeMapper,
             [NotNull] IRelationalAnnotationProvider annotations,
             [NotNull] IMigrationsAnnotationProvider migrationsAnnotations)
         {
-            Check.NotNull(currentContext, nameof(currentContext));
+            Check.NotNull(stateManager, nameof(stateManager));
+            Check.NotNull(relationalDatabase, nameof(relationalDatabase));
             Check.NotNull(typeMapper, nameof(typeMapper));
             Check.NotNull(annotations, nameof(annotations));
             Check.NotNull(migrationsAnnotations, nameof(migrationsAnnotations));
@@ -76,7 +79,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             // TODO: we're not using the context, because even though we may have an empty
             // model (e.g. first migration) we can still use the target IEntityTypes.
 
-            CurrentContext = currentContext;
+            StateManager = stateManager;
+            RelationalDatabase = (RelationalDatabase)relationalDatabase;
             TypeMapper = typeMapper;
             Annotations = annotations;
             MigrationsAnnotations = migrationsAnnotations;
@@ -86,7 +90,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        protected virtual DbContext CurrentContext { get; set; }
+        protected virtual IStateManager StateManager { get; set; }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        protected virtual RelationalDatabase RelationalDatabase { get; set; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -1207,8 +1217,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             [NotNull] DiffContext diffContext)
         {
             // We have to clean up for Down after Up
-            var sm = CurrentContext.GetService<ChangeTracking.Internal.IStateManager>();
-            foreach (var entry in sm.Entries.ToList())
+            foreach (var entry in StateManager.Entries.ToList())
             {
                 entry.SetEntityState(EntityState.Detached);
             }
@@ -1217,14 +1226,14 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             foreach (var sourceSeed in source.GetSeedData())
             {
                 var mappedSourceSeed = sourceSeed.ToDictionary(kvp => propertiesMapping[kvp.Key], kvp => kvp.Value);
-                sm.GetOrCreateShadowEntryWithValues(target, mappedSourceSeed).SetEntityState(EntityState.Deleted);
+                StateManager.GetOrCreateShadowEntryWithValues(target, mappedSourceSeed).SetEntityState(EntityState.Deleted);
             }
 
             var key = target.FindPrimaryKey();
             foreach (var targetSeed in target.GetSeedData())
             {
                 var keyValues = key.Properties.Select(p => targetSeed[p.Name]).ToArray();
-                var entry = sm.TryGetEntry(key, keyValues);
+                var entry = StateManager.TryGetEntry(key, keyValues);
                 if (entry != null)
                 {
                     entry.SetEntityState(EntityState.Unchanged);
@@ -1232,12 +1241,12 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 }
                 else
                 {
-                    sm.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
+                    StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
                 }
             }
 
-            var entries = sm.GetMigrationOperationsToRun();
-            var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>())
+            var entries = StateManager.GetMigrationOperationsToRun();
+            var operations = RelationalDatabase
                 .GetChanges(entries)
                 .SelectMany(o => o.ModificationCommands)
                 .Select(c => new ModificationOperation(c));
@@ -1249,14 +1258,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
 
         protected virtual IEnumerable<MigrationOperation> AddSeedData(IEntityType target)
         {
-            var sm = CurrentContext.GetService<ChangeTracking.Internal.IStateManager>();
             foreach (var targetSeed in target.GetSeedData())
             {
-                sm.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
+                StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
             }
 
-            var entries = sm.GetMigrationOperationsToRun();
-            var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>()).GetChanges(entries);
+            var entries = StateManager.GetMigrationOperationsToRun();
+            var operations = RelationalDatabase.GetChanges(entries);
             return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
         }
 

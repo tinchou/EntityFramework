@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 
 namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
 {
@@ -37,7 +39,6 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
             buildTargetAction(targetModelBuilder);
 
             var ctx = RelationalTestHelpers.Instance.CreateContext(targetModelBuilder.Model);
-
             var modelDiffer = CreateModelDiffer(ctx);
 
             var operationsUp = modelDiffer.GetDifferences(sourceModelBuilder.Model, targetModelBuilder.Model);
@@ -45,6 +46,9 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
 
             if (assertActionDown != null)
             {
+                ctx = RelationalTestHelpers.Instance.CreateContext(sourceModelBuilder.Model);
+                modelDiffer = CreateModelDiffer(ctx);
+
                 var operationsDown = modelDiffer.GetDifferences(targetModelBuilder.Model, sourceModelBuilder.Model);
                 assertActionDown(operationsDown);
             }
@@ -54,7 +58,8 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
 
         protected virtual MigrationsModelDiffer CreateModelDiffer(DbContext ctx)
             => new MigrationsModelDiffer(
-                ctx,
+                ctx.GetService<IStateManager>(),
+                ctx.GetService<IDatabase>(),
                 new ConcreteTypeMapper(new RelationalTypeMapperDependencies()),
                 new TestAnnotationProvider(),
                 new MigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()));
