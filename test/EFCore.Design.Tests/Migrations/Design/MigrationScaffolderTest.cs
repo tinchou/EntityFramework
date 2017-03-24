@@ -17,6 +17,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Update;
+using Moq;
 
 namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
 {
@@ -58,8 +60,8 @@ namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
                     new DbContextOptions<TContext>().WithExtension(new FakeRelationalOptionsExtension()),
                     idGenerator),
                 new MigrationsModelDiffer(
-                    currentContext.Context.GetService<IStateManager>(),
-                    currentContext.Context.GetService<IDatabase>(),
+                    Mock.Of<IStateManager>(),
+                    Mock.Of<ICommandBatchPreparer>(),
                     new TestRelationalTypeMapper(new RelationalTypeMapperDependencies()),
                     new TestAnnotationProvider(),
                     new MigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),

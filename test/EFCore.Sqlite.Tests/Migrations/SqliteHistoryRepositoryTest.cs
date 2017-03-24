@@ -1,9 +1,6 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -13,9 +10,12 @@ using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
-using Moq;
-using Xunit;
 using Microsoft.EntityFrameworkCore.Update;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Xunit;
 
 namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
 {
@@ -116,7 +116,8 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
                             { typeof(SqliteOptionsExtension), new SqliteOptionsExtension() }
                         }),
                     new MigrationsModelDiffer(
-                        Mock.Of<DbContext>(),
+                        Mock.Of<IStateManager>(),
+                        Mock.Of<ICommandBatchPreparer>(),
                         new SqliteTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqliteMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),

@@ -171,7 +171,7 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
                         }),
                     new MigrationsModelDiffer(
                         Mock.Of<IStateManager>(),
-                        Mock.Of<IDatabase>(),
+                        Mock.Of<ICommandBatchPreparer>(),
                         new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),

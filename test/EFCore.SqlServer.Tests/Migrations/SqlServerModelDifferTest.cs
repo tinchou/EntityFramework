@@ -1,7 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System.Linq;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.SqlServer.FunctionalTests;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
+using Microsoft.EntityFrameworkCore.Update;
+using System.Linq;
 using Xunit;
 
 namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
@@ -847,7 +849,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
 
         protected override MigrationsModelDiffer CreateModelDiffer(DbContext ctx)
             => new MigrationsModelDiffer(
-                ctx,
+                ctx.GetService<IStateManager>(),
+                ctx.GetService<ICommandBatchPreparer>(),
                 new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                 new SqlServerAnnotationProvider(),
                 new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()));

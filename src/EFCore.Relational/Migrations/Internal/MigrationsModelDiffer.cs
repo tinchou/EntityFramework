@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Update;
 
 namespace Microsoft.EntityFrameworkCore.Migrations.Internal
 {
@@ -65,13 +66,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         /// </summary>
         public MigrationsModelDiffer(
             [NotNull] IStateManager stateManager,
-            [NotNull] IDatabase relationalDatabase,
+            [NotNull] ICommandBatchPreparer batchPreparer,
             [NotNull] IRelationalTypeMapper typeMapper,
             [NotNull] IRelationalAnnotationProvider annotations,
             [NotNull] IMigrationsAnnotationProvider migrationsAnnotations)
         {
             Check.NotNull(stateManager, nameof(stateManager));
-            Check.NotNull(relationalDatabase, nameof(relationalDatabase));
+            Check.NotNull(batchPreparer, nameof(batchPreparer));
             Check.NotNull(typeMapper, nameof(typeMapper));
             Check.NotNull(annotations, nameof(annotations));
             Check.NotNull(migrationsAnnotations, nameof(migrationsAnnotations));
@@ -80,7 +81,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             // model (e.g. first migration) we can still use the target IEntityTypes.
 
             StateManager = stateManager;
-            RelationalDatabase = (RelationalDatabase)relationalDatabase;
+            BatchPreparer = batchPreparer;
             TypeMapper = typeMapper;
             Annotations = annotations;
             MigrationsAnnotations = migrationsAnnotations;
@@ -96,7 +97,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        protected virtual RelationalDatabase RelationalDatabase { get; set; }
+        protected virtual ICommandBatchPreparer BatchPreparer { get; set; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -1246,14 +1247,10 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             }
 
             var entries = StateManager.GetMigrationOperationsToRun();
-            var operations = RelationalDatabase
-                .GetChanges(entries)
+            return BatchPreparer
+                .BatchCommands(entries)
                 .SelectMany(o => o.ModificationCommands)
                 .Select(c => new ModificationOperation(c));
-            foreach (var operation in operations)
-            {
-                yield return operation;
-            }
         }
 
         protected virtual IEnumerable<MigrationOperation> AddSeedData(IEntityType target)
@@ -1264,8 +1261,10 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             }
 
             var entries = StateManager.GetMigrationOperationsToRun();
-            var operations = RelationalDatabase.GetChanges(entries);
-            return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
+            return BatchPreparer
+                .BatchCommands(entries)
+                .SelectMany(o => o.ModificationCommands)
+                .Select(c => new ModificationOperation(c));
         }
 
         #endregion
