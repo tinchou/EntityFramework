@@ -129,6 +129,6 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         ///     </para>
         /// </summary>
         /// <returns> The properties defined on this entity. </returns>
-        IEnumerable<object> GetSeedData();
+        IEnumerable<IDictionary<string, object>> GetSeedData();
     }
 }

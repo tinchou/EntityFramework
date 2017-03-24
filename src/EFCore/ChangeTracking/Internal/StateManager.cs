@@ -152,6 +152,25 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         }
 
         /// <summary>
+        ///     TODO
+        /// </summary>
+        public virtual InternalEntityEntry GetOrCreateShadowEntryWithValues(IEntityType entityType, IDictionary<string, object> values)
+        {
+            var entry = TryGetEntry(values);
+            if (entry == null)
+            {
+                _trackingQueryMode = TrackingQueryMode.Multiple;
+
+                entry = _factory.Create(this, entityType, null /*we're not using it*/);
+                // TODO move this to InternalEntityEntryFactory
+                entry.ToEntityEntry().CurrentValues.SetValues(values);
+
+                _entityReferenceMap[entry] = entry;
+            }
+            return entry;
+        }
+
+        /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>

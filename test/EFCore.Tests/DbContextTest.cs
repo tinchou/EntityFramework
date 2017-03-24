@@ -224,7 +224,7 @@ namespace Microsoft.EntityFrameworkCore.Tests
                 throw new NotImplementedException();
             }
 
-            public InternalEntityEntry GetOrCreateEntry(IEntityType entityType, object entity)
+            public InternalEntityEntry GetOrCreateShadowEntryWithValues(IEntityType entityType, IDictionary<string, object> values)
             {
                 throw new NotImplementedException();
             }

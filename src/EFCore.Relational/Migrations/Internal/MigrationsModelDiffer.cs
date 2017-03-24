@@ -1203,60 +1203,58 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             [NotNull] IEntityType target,
             [NotNull] DiffContext diffContext)
         {
+            // We have to clean up for Down after Up
+            foreach (var entry in CurrentContext.ChangeTracker.Entries().ToList())
+            {
+                entry.State = EntityState.Detached;
+            }
+
+            var sm = CurrentContext.GetService<ChangeTracking.Internal.IStateManager>();
+            var propertiesMapping = source.GetProperties().ToDictionary(p => p.Name, p => diffContext.FindTarget(p)?.Name ?? p.Name);
             foreach (var sourceSeed in source.GetSeedData())
             {
-                CurrentContext.Entry(NewEntityWithValues(target, sourceSeed, diffContext)).State = EntityState.Deleted;
+                var mappedSourceSeed = sourceSeed.ToDictionary(kvp => propertiesMapping[kvp.Key], kvp => kvp.Value);
+                sm.GetOrCreateShadowEntryWithValues(target, mappedSourceSeed).SetEntityState(EntityState.Deleted);
             }
 
             var key = target.FindPrimaryKey();
             foreach (var targetSeed in target.GetSeedData())
             {
-                var typedTargetSeed = NewEntityWithValues(target, targetSeed);
-                var keyValues = key.Properties.Select(p => p.GetGetter().GetClrValue(typedTargetSeed)).ToArray();
-                var existingEntry = CurrentContext.TryGetEntry(key, keyValues);
-                if (existingEntry != null)
+                var keyValues = key.Properties.Select(p => targetSeed[p.Name]).ToArray();
+                var entry = sm.TryGetEntry(key, keyValues);
+                if (entry != null)
                 {
-                    existingEntry.State = EntityState.Unchanged;
-                    existingEntry.CurrentValues.SetValues(typedTargetSeed);
+                    entry.SetEntityState(EntityState.Unchanged);
+                    entry.ToEntityEntry().CurrentValues.SetValues(targetSeed);
                 }
                 else
                 {
-                    CurrentContext.Entry(typedTargetSeed).State = EntityState.Added;
+                    sm.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
                 }
             }
 
-            var entries = CurrentContext.ChangeTracker.GetChanges();
-            var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>()).GetChanges(entries);
-            return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
+            var entries = sm.GetMigrationOperationsToRun();
+            var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>())
+                .GetChanges(entries)
+                .SelectMany(o => o.ModificationCommands)
+                .Select(c => new ModificationOperation(c));
+            foreach (var operation in operations)
+            {
+                yield return operation;
+            }
         }
 
         protected virtual IEnumerable<MigrationOperation> AddSeedData(IEntityType target)
         {
-            foreach (var sourceSeed in target.GetSeedData())
+            var sm = CurrentContext.GetService<ChangeTracking.Internal.IStateManager>();
+            foreach (var targetSeed in target.GetSeedData())
             {
-                CurrentContext.Entry(NewEntityWithValues(target, sourceSeed)).State = EntityState.Added;
+                sm.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
             }
 
             var entries = CurrentContext.ChangeTracker.GetChanges();
             var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>()).GetChanges(entries);
             return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
-        }
-
-        private static object NewEntityWithValues(IEntityType target, object obj, DiffContext diffContext = null)
-        {
-            var instance = Activator.CreateInstance(target.ClrType);
-            foreach (var targetProperty in target.GetProperties())
-            {
-                var sourceProperty = diffContext?.FindSource(targetProperty) ?? targetProperty;
-                // we use sourceProperty.Name and not its getter because seed data may not have a CLR type
-                var getter = obj.GetType().GetAnyProperty(sourceProperty.Name)?.FindGetterProperty();
-                if (getter != null)
-                {
-                    targetProperty.GetSetter().SetClrValue(instance, getter.GetValue(obj));
-                }
-            }
-
-            return instance;
         }
 
         #endregion

@@ -17,14 +17,16 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         protected void Execute(
             Action<ModelBuilder> buildSourceAction,
             Action<ModelBuilder> buildTargetAction,
-            Action<IReadOnlyList<MigrationOperation>> assertAction)
-            => Execute(m => { }, buildSourceAction, buildTargetAction, assertAction);
+            Action<IReadOnlyList<MigrationOperation>> assertActionUp,
+            Action<IReadOnlyList<MigrationOperation>> assertActionDown = null)
+            => Execute(m => { }, buildSourceAction, buildTargetAction, assertActionUp, assertActionDown);
 
         protected void Execute(
             Action<ModelBuilder> buildCommonAction,
             Action<ModelBuilder> buildSourceAction,
             Action<ModelBuilder> buildTargetAction,
-            Action<IReadOnlyList<MigrationOperation>> assertAction)
+            Action<IReadOnlyList<MigrationOperation>> assertActionUp,
+            Action<IReadOnlyList<MigrationOperation>> assertActionDown = null)
         {
             var sourceModelBuilder = CreateModelBuilder();
             buildCommonAction(sourceModelBuilder);
@@ -38,9 +40,14 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
 
             var modelDiffer = CreateModelDiffer(ctx);
 
-            var operations = modelDiffer.GetDifferences(sourceModelBuilder.Model, targetModelBuilder.Model);
+            var operationsUp = modelDiffer.GetDifferences(sourceModelBuilder.Model, targetModelBuilder.Model);
+            assertActionUp(operationsUp);
 
-            assertAction(operations);
+            if (assertActionDown != null)
+            {
+                var operationsDown = modelDiffer.GetDifferences(targetModelBuilder.Model, sourceModelBuilder.Model);
+                assertActionDown(operationsDown);
+            }
         }
 
         protected abstract ModelBuilder CreateModelBuilder();

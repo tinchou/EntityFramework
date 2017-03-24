@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
+using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Xunit;
 
@@ -154,24 +155,40 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         public void Drop_table_with_seed_data()
         {
             Execute(
-                source => source.Entity("Zebra",
+                source => source.Entity(
+                    "Zebra",
                     x =>
                     {
-                        x.ToTable("Zebra", "dbo");
                         x.Property<int>("Id");
                         x.Property<string>("Name").HasColumnType("nvarchar(30)");
                         x.SeedData(
                             new { Id = 42, Name = "equal" });
                     }),
                 _ => { },
-                operations =>
-                {
-                    Assert.Equal(1, operations.Count);
-
-                    var operation = Assert.IsType<DropTableOperation>(operations[0]);
-                    Assert.Equal("Zebra", operation.Name);
-                    Assert.Equal("dbo", operation.Schema);
-                });
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<DropTableOperation>(o);
+                        Assert.Null(operation.Schema);
+                        Assert.Equal("Zebra", operation.Name);
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<CreateTableOperation>(o);
+                        Assert.Null(operation.Schema);
+                        Assert.Equal("Zebra", operation.Name);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Null(c.Schema);
+                        Assert.Equal("Zebra", c.TableName);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal("equal", m.Value));
+                    }));
         }
 
         [Fact]
@@ -494,7 +511,8 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                             new { Id = 42 },
                             new { Id = 27 });
                     }),
-                target => target.Entity<EntityWithId>(
+                target => target.Entity(
+                    "EntityWithId",
                     x =>
                     {
                         x.ToTable("EntityWithIdWrongName");
@@ -504,6 +522,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                             new { Id = 42 },
                             new { Id = 27 });
                     }),
+                Assert.Empty,
                 Assert.Empty);
         }
 
@@ -662,6 +681,73 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     });
         }
 
+        [Fact]
+        public void Add_column_with_seed_data()
+        {
+            Execute(
+                source => source.Entity(
+                    "Firefly",
+                    x =>
+                    {
+                        x.ToTable("Firefly", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.SeedData(
+                            new { Id = 42 });
+                    }),
+                target => target.Entity(
+                    "Firefly",
+                    x =>
+                    {
+                        x.ToTable("Firefly", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<string>("Name").HasColumnType("nvarchar(30)");
+                        x.SeedData(
+                            new { Id = 42, Name = "Firefly 1" },
+                            new { Id = 43, Name = "Firefly 2" });
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<AddColumnOperation>(o);
+                        Assert.Equal("dbo", operation.Schema);
+                        Assert.Equal("Firefly", operation.Table);
+                        Assert.Equal("Name", operation.Name);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal("Firefly 1", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(43, m.Value),
+                            m => Assert.Equal("Firefly 2", m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<DropColumnOperation>(o);
+                        Assert.Equal("dbo", operation.Schema);
+                        Assert.Equal("Firefly", operation.Table);
+                        Assert.Equal("Name", operation.Name);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Deleted, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(43, m.Value));
+                    }));
+        }
+
         private enum SomeEnum
         {
             Default
@@ -674,29 +760,96 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 source => source.Entity(
                     "Firefly",
                     x =>
-                        {
-                            x.ToTable("Firefly", "dbo");
-                            x.Property<int>("Id");
-                            x.HasKey("Id");
-                            x.Property<string>("Name").HasColumnType("nvarchar(30)");
-                        }),
+                    {
+                        x.ToTable("Firefly", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<string>("Name").HasColumnType("nvarchar(30)");
+                    }),
                 target => target.Entity(
                     "Firefly",
                     x =>
-                        {
-                            x.ToTable("Firefly", "dbo");
-                            x.Property<int>("Id");
-                            x.HasKey("Id");
-                        }),
-                operations =>
                     {
-                        Assert.Equal(1, operations.Count);
+                        x.ToTable("Firefly", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                    }),
+                operations =>
+                {
+                    Assert.Equal(1, operations.Count);
 
-                        var operation = Assert.IsType<DropColumnOperation>(operations[0]);
+                    var operation = Assert.IsType<DropColumnOperation>(operations[0]);
+                    Assert.Equal("dbo", operation.Schema);
+                    Assert.Equal("Firefly", operation.Table);
+                    Assert.Equal("Name", operation.Name);
+                });
+        }
+
+        [Fact]
+        public void Drop_column_with_seed_data()
+        {
+            Execute(
+                source => source.Entity(
+                    "Firefly",
+                    x =>
+                    {
+                        x.ToTable("Firefly", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<string>("Name").HasColumnType("nvarchar(30)");
+                        x.SeedData(
+                            new { Id = 42, Name = "Firefly 1" },
+                            new { Id = 43, Name = "Firefly 2" });
+                    }),
+                target => target.Entity(
+                    "Firefly",
+                    x =>
+                    {
+                        x.ToTable("Firefly", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.SeedData(
+                            new { Id = 42 });
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<DropColumnOperation>(o);
                         Assert.Equal("dbo", operation.Schema);
                         Assert.Equal("Firefly", operation.Table);
                         Assert.Equal("Name", operation.Name);
-                    });
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Deleted, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(43, m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<AddColumnOperation>(o);
+                        Assert.Equal("dbo", operation.Schema);
+                        Assert.Equal("Firefly", operation.Table);
+                        Assert.Equal("Name", operation.Name);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal("Firefly 1", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(43, m.Value),
+                            m => Assert.Equal("Firefly 2", m.Value));
+                    }));
         }
 
         [Fact]
@@ -734,6 +887,88 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         }
 
         [Fact]
+        public void Rename_column_with_seed_data()
+        {
+            Execute(
+                source => source.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("IdBeforeRename");
+                        x.HasKey("IdBeforeRename");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { IdBeforeRename = 42, Value1 = 32, Value2 = "equal" }, // modified
+                            new { IdBeforeRename = 24, Value1 = 72, Value2 = "not equal1" }); // modified
+                    }),
+                target => target.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.HasKey("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                            new { Id = 24, Value1 = 99, Value2 = "not equal2" }); // modified
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<RenameColumnOperation>(o);
+                        Assert.Null(operation.Schema);
+                        Assert.Equal("EntityWithTwoProperties", operation.Table);
+                        Assert.Equal("IdBeforeRename", operation.Name);
+                        Assert.Equal("Id", operation.NewName);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(99, m.Value),
+                            m => Assert.Equal("not equal2", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(27, m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<RenameColumnOperation>(o);
+                        Assert.Null(operation.Schema);
+                        Assert.Equal("EntityWithTwoProperties", operation.Table);
+                        Assert.Equal("Id", operation.Name);
+                        Assert.Equal("IdBeforeRename", operation.NewName);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(72, m.Value),
+                            m => Assert.Equal("not equal1", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(32, m.Value));
+                    }));
+        }
+
+        [Fact]
         public void Rename_property()
         {
             Execute(
@@ -762,7 +997,8 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         public void Rename_property_with_same_seed_data()
         {
             Execute(
-                target => target.Entity(nameof(EntityZebra),
+                target => target.Entity(
+                    "Zebra",
                     x =>
                     {
                         x.ToTable("Zebra", "dbo");
@@ -772,7 +1008,8 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                         x.SeedData(
                             new { Id = 42, ZebraName = "equal" }); // unchanged
                     }),
-                source => source.Entity<EntityZebra>(
+                source => source.Entity(
+                    "Zebra",
                     x =>
                     {
                         x.ToTable("Zebra", "dbo");
@@ -782,6 +1019,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                         x.SeedData(
                             new { Id = 42, Name = "equal" }); // unchanged
                     }),
+                Assert.Empty,
                 Assert.Empty);
         }
 
@@ -3339,28 +3577,39 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         {
             Execute(
                 _ => { },
-                target => target.Entity<EntityZebra>(
+                target => target.Entity(
+                    "Zebra",
                     x =>
                     {
-                        x.ToTable("Zebra");
                         x.Property<int>("Id");
                         x.Property<string>("Name").HasColumnType("nvarchar(30)");
                         x.SeedData(
-                            new EntityZebra { Id = 42, Name = "equal" });
+                            new { Id = 42, Name = "equal" });
                     }),
-                operations =>
-                {
-                    Assert.Equal(2, operations.Count);
-
-                    var operation = Assert.IsType<CreateTableOperation>(operations[0]);
-                    Assert.Equal("Zebra", operation.Name);
-                    Assert.Null(operation.Schema);
-
-                    var insertOperation = Assert.IsType<ModificationOperation>(operations[1]);
-                    Assert.Equal("Zebra", insertOperation.ModificationCommand.TableName);
-                    Assert.Null(insertOperation.ModificationCommand.Schema);
-                    Assert.Equal(2, insertOperation.ModificationCommand.ColumnModificationsBase.Count);
-                });
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<CreateTableOperation>(o);
+                        Assert.Null(operation.Schema);
+                        Assert.Equal("Zebra", operation.Name);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Null(c.Schema);
+                        Assert.Equal("Zebra", c.TableName);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal("equal", m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<DropTableOperation>(o);
+                        Assert.Null(operation.Schema);
+                        Assert.Equal("Zebra", operation.Name);
+                    }));
         }
 
         [Fact]
@@ -5267,232 +5516,328 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
         public void SeedData_add_on_existing_table()
         {
             Execute(
-                source => source
-                    .Entity(
-                        nameof(EntityWithTwoProperties),
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                        }),
-                target => target
-                    .Entity<EntityWithTwoProperties>(
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(new { Id = 42, Value1 = 32 });
-                        }),
-                operations =>
-                {
-                    Assert.Equal(1, operations.Count);
-                    Assert.Equal(1, operations.OfType<ModificationOperation>().Count());
-                });
+                source => source.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                    }),
+                target => target.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(new { Id = 42, Value1 = 32 });
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Equal(3, c.ColumnModifications.Count);
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Deleted, c.EntityState);
+                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(42, m.Value));
+                    }));
         }
 
         [Fact]
         public void SeedData_remove()
         {
             Execute(
-                source => source
-                    .Entity(
-                        nameof(EntityWithTwoProperties),
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(new { Id = 42, Value1 = 32 });
-                        }),
-                target => target
-                    .Entity<EntityWithTwoProperties>(
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                        }),
-                operations =>
-                {
-                    Assert.Equal(1, operations.Count);
-                    Assert.Equal(1, operations.OfType<ModificationOperation>().Count());
-                });
+                source => source.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(new { Id = 42, Value1 = 32 });
+                    }),
+                target => target.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Deleted, c.EntityState);
+                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(42, m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Equal(3, c.ColumnModifications.Count);
+                    }));
         }
 
         [Fact]
         public void SeedData_update()
         {
             Execute(
-                source => source
-                    .Entity(
-                        nameof(EntityWithTwoProperties),
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
-                                new { Id = 24, Value1 = 72, Value2 = "equal" }); // modified
-                        }),
-                target => target
-                    .Entity<EntityWithTwoProperties>(
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
-                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
-                        }),
-                operations =>
-                {
-                    Assert.Equal(2, operations.Count);
-                    Assert.Equal(2, operations.OfType<ModificationOperation>().Count());
-                });
-        }
-
-        [Fact]
-        public void SeedData_update_with_column_rename()
-        {
-            Execute(
-                source => source
-                    .Entity(
-                        nameof(EntityWithTwoProperties),
-                        x =>
-                        {
-                            x.Property<int>("IdBeforeRename");
-                            x.HasKey("IdBeforeRename");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { IdBeforeRename = 42, Value1 = 32, Value2 = "equal" }, // modified
-                                new { IdBeforeRename = 24, Value1 = 72, Value2 = "equal" }); // modified
-                        }),
-                target => target
-                    .Entity<EntityWithTwoProperties>(
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.HasKey("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
-                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
-                        }),
-                operations =>
-                {
-                    Assert.Equal(3, operations.Count);
-                    Assert.Equal(1, operations.OfType<RenameColumnOperation>().Count());
-                    Assert.Equal(2, operations.OfType<ModificationOperation>().Count());
-                });
+                source => source.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
+                            new { Id = 24, Value1 = 72, Value2 = "not equal1" }); // modified
+                    }),
+                target => target.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                            new { Id = 24, Value1 = 99, Value2 = "not equal2" }); // modified
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(99, m.Value),
+                            m => Assert.Equal("not equal2", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(27, m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(72, m.Value),
+                            m => Assert.Equal("not equal1", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(32, m.Value));
+                    }));
         }
 
         [Fact]
         public void SeedData_update_with_table_rename()
         {
             Execute(
-                source => source
-                    .Entity<EntityWithTwoProperties>(
-                        x =>
-                        {
-                            x.ToTable("Cat", "dbo");
-                            x.Property<int>("Id");
-                            x.HasKey("Id").HasName("PK_Cat");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
-                                new { Id = 24, Value1 = 72, Value2 = "equal" }); // modified
-                        }),
-                target => target
-                    .Entity<EntityWithTwoProperties>(
-                        x =>
-                        {
-                            x.ToTable("Cats", "dbo");
-                            x.Property<int>("Id");
-                            x.HasKey("Id").HasName("PK_Cat");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
-                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
-                        }),
-                operations =>
-                {
-                    Assert.Equal(3, operations.Count);
-
-                    var operation = Assert.IsType<RenameTableOperation>(operations[0]);
-                    Assert.Equal("Cat", operation.Name);
-                    Assert.Equal("dbo", operation.Schema);
-                    Assert.Equal("Cats", operation.NewName);
-                    Assert.Null(operation.NewSchema);
-
-                    Assert.Equal(2, operations.OfType<ModificationOperation>().Count());
-                    var modificationOperation = Assert.IsType<ModificationOperation>(operations[1]);
-                    Assert.Equal("Cats", modificationOperation.ModificationCommand.TableName);
-                    Assert.Equal("dbo", modificationOperation.ModificationCommand.Schema);
-                });
+                source => source.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.ToTable("Cat", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id").HasName("PK_Cat");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
+                            new { Id = 24, Value1 = 72, Value2 = "not equal1" }); // modified
+                    }),
+                target => target.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.ToTable("Cats", "dbo");
+                        x.Property<int>("Id");
+                        x.HasKey("Id").HasName("PK_Cat");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                            new { Id = 24, Value1 = 99, Value2 = "not equal2" }); // modified
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<RenameTableOperation>(o);
+                        Assert.Equal("Cat", operation.Name);
+                        Assert.Equal("dbo", operation.Schema);
+                        Assert.Equal("Cats", operation.NewName);
+                        Assert.Null(operation.NewSchema);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Equal("Cats", c.TableName);
+                        Assert.Equal("dbo", c.Schema);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(99, m.Value),
+                            m => Assert.Equal("not equal2", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Equal("Cats", c.TableName);
+                        Assert.Equal("dbo", c.Schema);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(27, m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var operation = Assert.IsType<RenameTableOperation>(o);
+                        Assert.Equal("Cats", operation.Name);
+                        Assert.Equal("dbo", operation.Schema);
+                        Assert.Equal("Cat", operation.NewName);
+                        Assert.Null(operation.NewSchema);
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Equal("Cat", c.TableName);
+                        Assert.Equal("dbo", c.Schema);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(72, m.Value),
+                            m => Assert.Equal("not equal1", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Equal("Cat", c.TableName);
+                        Assert.Equal("dbo", c.Schema);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(32, m.Value));
+                    }));
         }
 
         [Fact]
         public void SeedData_all_operations()
         {
             Execute(
-                source => source
-                    .Entity(
-                        nameof(EntityWithTwoProperties),
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { Id = 99999, Value1 = 0, Value2 = "" }, // deleted
-                                new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
-                                new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
-                                new { Id = 24, Value1 = 72, Value2 = "equal" }); // modified
-                        }),
-                target => target
-                    .Entity<EntityWithTwoProperties>(
-                        x =>
-                        {
-                            x.Property<int>("Id");
-                            x.Property<int>("Value1");
-                            x.Property<string>("Value2");
-                            x.SeedData(
-                                new { Id = 11111, Value1 = 0, Value2 = "" }, // added
-                                new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
-                                new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
-                                new { Id = 24, Value1 = 99, Value2 = "not equal" }); // modified
-                        }),
-                operations =>
-                {
-                    Assert.Equal(4, operations.Count);
-                    Assert.Equal(4, operations.OfType<ModificationOperation>().Count());
-                });
-        }
-
-        private class EntityWithId
-        {
-            public int Id { get; set; }
-        }
-
-        private class EntityWithTwoProperties
-        {
-            public int Id { get; set; }
-            public int Value1 { get; set; }
-            public string Value2 { get; set; }
-        }
-
-        private class EntityZebra
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
+                source => source.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { Id = 99999, Value1 = 0, Value2 = "" }, // deleted
+                            new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
+                            new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
+                            new { Id = 24, Value1 = 72, Value2 = "not equal1" }); // modified
+                    }),
+                target => target.Entity(
+                    "EntityWithTwoProperties",
+                    x =>
+                    {
+                        x.Property<int>("Id");
+                        x.Property<int>("Value1");
+                        x.Property<string>("Value2");
+                        x.SeedData(
+                            new { Id = 11111, Value1 = 0, Value2 = "" }, // added
+                            new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                            new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
+                            new { Id = 24, Value1 = 99, Value2 = "not equal2" }); // modified
+                    }),
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Deleted, c.EntityState);
+                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(99999, m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(99, m.Value),
+                            m => Assert.Equal("not equal2", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(27, m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(11111, m.Value),
+                            m => Assert.Equal(0, m.Value),
+                            m => Assert.Equal("", m.Value));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Deleted, c.EntityState);
+                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(11111, m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(24, m.Value),
+                            m => Assert.Equal(72, m.Value),
+                            m => Assert.Equal("not equal1", m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Modified, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(42, m.Value),
+                            m => Assert.Equal(32, m.Value));
+                    },
+                    o =>
+                    {
+                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
+                        Assert.Equal(EntityState.Added, c.EntityState);
+                        Assert.Collection(c.ColumnModifications,
+                            m => Assert.Equal(99999, m.Value),
+                            m => Assert.Equal(0, m.Value),
+                            m => Assert.Equal("", m.Value));
+                    }));
         }
 
         protected override ModelBuilder CreateModelBuilder() => RelationalTestHelpers.Instance.CreateConventionBuilder();

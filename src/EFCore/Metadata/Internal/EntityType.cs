@@ -1767,13 +1767,13 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         #region SeedData
 
-        private readonly HashSet<object> _seedData = new HashSet<object>();
+        private readonly HashSet<IDictionary<string, object>> _seedData = new HashSet<IDictionary<string, object>>();
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        public virtual IEnumerable<object> GetSeedData()
+        public virtual IEnumerable<IDictionary<string, object>> GetSeedData()
         {
             return _seedData;
         }
@@ -1785,7 +1785,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         public virtual void AddSeedData(
             [NotNull] object[] data)
         {
-            _seedData.UnionWith(data);
+            var dicts = data.Select(d => d.GetType().GetRuntimeProperties().ToDictionary(x => x.Name, x => x.GetValue(d)));
+            _seedData.UnionWith(dicts);
         }
 
         #endregion
