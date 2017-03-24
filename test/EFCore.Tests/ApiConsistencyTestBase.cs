@@ -23,7 +23,7 @@ namespace Microsoft.EntityFrameworkCore.Tests
             = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         [Fact]
-        public void Public_inheritable_apis_should_be_virtual()
+        public virtual void Public_inheritable_apis_should_be_virtual()
         {
             var nonVirtualMethods
                 = (from type in GetAllTypes(TargetAssembly.GetTypes())
@@ -48,7 +48,7 @@ namespace Microsoft.EntityFrameworkCore.Tests
         }
 
         [Fact]
-        public void Public_api_arguments_should_have_not_null_annotation()
+        public virtual void Public_api_arguments_should_have_not_null_annotation()
         {
             var parametersMissingAttribute
                 = (from type in GetAllTypes(TargetAssembly.GetTypes())
@@ -85,7 +85,7 @@ namespace Microsoft.EntityFrameworkCore.Tests
         }
 
         [Fact]
-        public void Async_methods_should_have_overload_with_cancellation_token_and_end_with_async_suffix()
+        public virtual void Async_methods_should_have_overload_with_cancellation_token_and_end_with_async_suffix()
         {
             var asyncMethods
                 = (from type in GetAllTypes(TargetAssembly.GetTypes())
@@ -133,7 +133,7 @@ namespace Microsoft.EntityFrameworkCore.Tests
         }
 
         [Fact]
-        public void Public_api_bool_parameters_should_not_be_prefixed()
+        public virtual void Public_api_bool_parameters_should_not_be_prefixed()
         {
             var prefixes = new[]
             {

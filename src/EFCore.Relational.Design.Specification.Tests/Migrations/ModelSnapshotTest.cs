@@ -1826,7 +1826,8 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
                 {
                     builder.Entity<EntityWithOneProperty>()
                         .Ignore(e => e.EntityWithTwoProperties)
-                        .SeedData(new[] { new EntityWithOneProperty { Id = 42 } });
+                        .SeedData(
+                            new EntityWithOneProperty { Id = 42 });
                     builder.Ignore<EntityWithTwoProperties>();
                 },
                GetHeading() + @"
@@ -1845,13 +1846,9 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
         });
     });
 ",
-                o =>
-                {
-                    object seed = o.GetEntityTypes().Single().GetSeedData().Single();
-                    var property = seed.GetType().GetProperty("Id");
-                    Assert.Equal(42, (int)property.GetValue(seed));
-                }
-            );
+                o => Assert.Collection(
+                    o.GetEntityTypes().Select(e => e.GetSeedData().Single()),
+                    seed => Assert.Equal(42, seed["Id"])));
         }
 
         [Fact]
@@ -1862,10 +1859,12 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
                 {
                     builder.Entity<EntityWithOneProperty>()
                         .Ignore(e => e.EntityWithTwoProperties)
-                        .SeedData(new[] { new EntityWithOneProperty { Id = 27 } });
+                        .SeedData(
+                            new EntityWithOneProperty { Id = 27 });
                     builder.Entity<EntityWithTwoProperties>()
                         .Ignore(e => e.EntityWithOneProperty)
-                        .SeedData(new[] { new EntityWithTwoProperties { Id = 42, AlternateId = 43 } });
+                        .SeedData(
+                            new EntityWithTwoProperties { Id = 42, AlternateId = 43 });
                 },
                 GetHeading() + @"
 builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelSnapshotTest+EntityWithOneProperty"", b =>
@@ -1900,24 +1899,14 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
         });
     });
 ",
-                o =>
-                {
-                    Assert.Equal(2, o.GetEntityTypes().Count());
-                    Assert.Collection(
-                        o.GetEntityTypes().Select(e => e.GetSeedData().Single()),
-                        seed =>
-                        {
-                            var p = seed.GetType().GetProperty("Id");
-                            Assert.Equal(27, (int)p.GetValue(seed));
-                        },
-                        seed =>
-                        {
-                            var p1 = seed.GetType().GetProperty("Id");
-                            Assert.Equal(42, (int)p1.GetValue(seed));
-                            var p2 = seed.GetType().GetProperty("AlternateId");
-                            Assert.Equal(43, (int)p2.GetValue(seed));
-                        });
-                });
+                o => Assert.Collection(
+                    o.GetEntityTypes().Select(e => e.GetSeedData().Single()),
+                    seed => Assert.Equal(27, seed["Id"]),
+                    seed =>
+                    {
+                        Assert.Equal(42, seed["Id"]);
+                        Assert.Equal(43, seed["AlternateId"]);
+                    }));
         }
 
         #endregion

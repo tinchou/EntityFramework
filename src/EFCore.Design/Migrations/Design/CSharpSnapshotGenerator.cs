@@ -660,7 +660,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
 
         protected virtual void GenerateSeedData(
             [NotNull] IEnumerable<IProperty> properties,
-            [NotNull] IEnumerable<object> data,
+            [NotNull] IEnumerable<IDictionary<string, object>> data,
             [NotNull] IndentedStringBuilder stringBuilder)
         {
             Check.NotNull(properties, nameof(properties));
@@ -710,7 +710,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                         stringBuilder
                             .Append(_code.Identifier(property.Name))
                             .Append(" = ")
-                            .Append(_code.UnknownLiteral(property.GetGetter().GetClrValue(o)));
+                            .Append(_code.UnknownLiteral(o[property.Name]));
                     }
 
                     stringBuilder.Append(" }");

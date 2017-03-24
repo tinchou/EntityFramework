@@ -91,13 +91,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        protected virtual IStateManager StateManager { get; set; }
+        protected virtual IStateManager StateManager { get; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        protected virtual ICommandBatchPreparer BatchPreparer { get; set; }
+        protected virtual ICommandBatchPreparer BatchPreparer { get; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -1217,6 +1217,10 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             [NotNull] IEntityType target,
             [NotNull] DiffContext diffContext)
         {
+            Check.NotNull(source, nameof(source));
+            Check.NotNull(target, nameof(target));
+            Check.NotNull(diffContext, nameof(diffContext));
+
             // We have to clean up for Down after Up
             foreach (var entry in StateManager.Entries.ToList())
             {
@@ -1253,8 +1257,10 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 .Select(c => new ModificationOperation(c));
         }
 
-        protected virtual IEnumerable<MigrationOperation> AddSeedData(IEntityType target)
+        protected virtual IEnumerable<MigrationOperation> AddSeedData([NotNull] IEntityType target)
         {
+            Check.NotNull(target, nameof(target));
+
             foreach (var targetSeed in target.GetSeedData())
             {
                 StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);

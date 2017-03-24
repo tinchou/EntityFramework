@@ -3,7 +3,7 @@
 
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Update;
-using System;
+using Microsoft.EntityFrameworkCore.Utilities;
 using System.Linq;
 
 namespace Microsoft.EntityFrameworkCore.Migrations.Operations
@@ -11,9 +11,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Operations
     public class DeleteOperation : ModificationOperation
     {
         public DeleteOperation(
-            string table,
-            string[] keyColumns,
-            object[] keyValues)
+            [NotNull] string table,
+            [NotNull] string[] keyColumns,
+            [NotNull] object[] keyValues)
         : this(
             null,
             table,
@@ -23,16 +23,20 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Operations
         }
 
         public DeleteOperation(
-            string schema,
-            string table,
-            string[] keyColumns,
-            object[] keyValues)
+            [CanBeNull] string schema,
+            [NotNull] string table,
+            [NotNull] string[] keyColumns,
+            [NotNull] object[] keyValues)
         : base(
             new ModificationCommandBase(
                 table,
                 schema,
                 keyColumns.Zip(keyValues, (k, v) => new ColumnModificationBase(k, null, null, v, false, true, true, true, false)).ToArray()))
         {
+            Check.NotNull(table, nameof(table));
+            Check.NotNull(keyColumns, nameof(keyColumns));
+            Check.NotNull(keyValues, nameof(keyValues));
+
             Schema = schema;
             Table = table;
             KeyColumns = keyColumns;

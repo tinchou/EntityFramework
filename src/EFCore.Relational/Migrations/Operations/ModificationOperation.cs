@@ -3,13 +3,16 @@
 
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Update;
+using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Migrations.Operations
 {
     public class ModificationOperation : MigrationOperation
     {
-        public ModificationOperation(ModificationCommandBase modificationCommandBase)
+        public ModificationOperation([NotNull] ModificationCommandBase modificationCommandBase)
         {
+            Check.NotNull(modificationCommandBase, nameof(modificationCommandBase));
+
             ModificationCommand = modificationCommandBase;
         }
 

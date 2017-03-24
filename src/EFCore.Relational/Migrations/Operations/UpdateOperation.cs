@@ -3,7 +3,7 @@
 
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Update;
-using System;
+using Microsoft.EntityFrameworkCore.Utilities;
 using System.Linq;
 
 namespace Microsoft.EntityFrameworkCore.Migrations.Operations
@@ -11,11 +11,11 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Operations
     public class UpdateOperation : ModificationOperation
     {
         public UpdateOperation(
-            string table,
-            string[] keyColumns,
-            object[] keyValues,
-            string[] columns,
-            object[] values)
+            [NotNull] string table,
+            [NotNull] string[] keyColumns,
+            [NotNull] object[] keyValues,
+            [NotNull] string[] columns,
+            [NotNull] object[] values)
         : this(
             null,
             table,
@@ -27,12 +27,12 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Operations
         }
 
         public UpdateOperation(
-            string schema,
-            string table,
-            string[] keyColumns,
-            object[] keyValues,
-            string[] columns,
-            object[] values)
+            [CanBeNull] string schema,
+            [NotNull] string table,
+            [NotNull] string[] keyColumns,
+            [NotNull] object[] keyValues,
+            [NotNull] string[] columns,
+            [NotNull] object[] values)
         : base(
             new ModificationCommandBase(
                 table,
@@ -42,6 +42,12 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Operations
                 columns.Zip(values,
                     (k, v) => new ColumnModificationBase(k, null, null, v, false, true, true, false, false))).ToArray()))
         {
+            Check.NotNull(table, nameof(table));
+            Check.NotNull(keyColumns, nameof(keyColumns));
+            Check.NotNull(keyValues, nameof(keyValues));
+            Check.NotNull(columns, nameof(columns));
+            Check.NotNull(values, nameof(values));
+
             Schema = schema;
             Table = table;
             KeyColumns = keyColumns;

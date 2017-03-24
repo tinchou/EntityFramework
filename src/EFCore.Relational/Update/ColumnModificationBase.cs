@@ -1,21 +1,26 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.Utilities;
+
 namespace Microsoft.EntityFrameworkCore.Update
 {
     public class ColumnModificationBase
     {
         public ColumnModificationBase(
-            string columnName,
-            string parameterName,
-            object originalValue,
-            object value,
+            [NotNull] string columnName,
+            [CanBeNull] string parameterName,
+            [CanBeNull] object originalValue,
+            [CanBeNull] object value,
             bool isRead,
             bool isWrite,
             bool isKey,
             bool isCondition,
             bool useOriginalValueParameter)
         {
+            Check.NotNull(columnName, nameof(columnName));
+ 
             ColumnName = columnName;
             ParameterName = OriginalParameterName = parameterName;
             OriginalValue = originalValue;

@@ -1134,12 +1134,6 @@ namespace Microsoft.EntityFrameworkCore
         }
 
         /// <summary>
-        ///     Returns an entry with the specified key and values or null.
-        /// </summary>
-        public virtual EntityEntry TryGetEntry(IKey key, object[] keyValues)
-            => StateManager.TryGetEntry(key, keyValues)?.ToEntityEntry();
-
-        /// <summary>
         ///     Finds an entity with the given primary key values. If an entity with the given primary key values
         ///     is being tracked by the context, then it is returned immediately without making a request to the
         ///     database. Otherwise, a query is made to the database for an entity with the given primary key values
