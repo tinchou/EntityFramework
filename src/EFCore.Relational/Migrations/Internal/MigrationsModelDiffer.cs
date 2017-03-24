@@ -73,6 +73,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             Check.NotNull(annotations, nameof(annotations));
             Check.NotNull(migrationsAnnotations, nameof(migrationsAnnotations));
 
+            // TODO: we're not using the context, because even though we may have an empty
+            // model (e.g. first migration) we can still use the target IEntityTypes.
+
             CurrentContext = currentContext;
             TypeMapper = typeMapper;
             Annotations = annotations;
@@ -83,7 +86,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        protected virtual DbContext CurrentContext { get; }
+        protected virtual DbContext CurrentContext { get; set; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -1204,12 +1207,12 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             [NotNull] DiffContext diffContext)
         {
             // We have to clean up for Down after Up
-            foreach (var entry in CurrentContext.ChangeTracker.Entries().ToList())
+            var sm = CurrentContext.GetService<ChangeTracking.Internal.IStateManager>();
+            foreach (var entry in sm.Entries.ToList())
             {
-                entry.State = EntityState.Detached;
+                entry.SetEntityState(EntityState.Detached);
             }
 
-            var sm = CurrentContext.GetService<ChangeTracking.Internal.IStateManager>();
             var propertiesMapping = source.GetProperties().ToDictionary(p => p.Name, p => diffContext.FindTarget(p)?.Name ?? p.Name);
             foreach (var sourceSeed in source.GetSeedData())
             {
@@ -1252,7 +1255,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 sm.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
             }
 
-            var entries = CurrentContext.ChangeTracker.GetChanges();
+            var entries = sm.GetMigrationOperationsToRun();
             var operations = ((RelationalDatabase)CurrentContext.GetService<IDatabase>()).GetChanges(entries);
             return operations.SelectMany(o => o.ModificationCommands).Select(c => new ModificationOperation(c));
         }
