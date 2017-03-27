@@ -4,6 +4,7 @@
 using System;
 using System.Text;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
+using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities.FakeProvider;
 using Microsoft.EntityFrameworkCore.Specification.Tests;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Update;
@@ -12,41 +13,16 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
 {
     public class UpdateSqlGeneratorTest : UpdateSqlGeneratorTestBase
     {
-        protected override IUpdateSqlGenerator CreateSqlGenerator() => new ConcreteSqlGenerator();
+        protected override IUpdateSqlGenerator CreateSqlGenerator()
+            => new FakeSqlGenerator(
+                   new UpdateSqlGeneratorDependencies(
+                       new RelationalSqlGenerationHelper(
+                           new RelationalSqlGenerationHelperDependencies()));
 
         protected override TestHelpers TestHelpers => RelationalTestHelpers.Instance;
 
         protected override string RowsAffected => "provider_specific_rowcount()";
 
         protected override string Identity => "provider_specific_identity()";
-
-        private class ConcreteSqlGenerator : UpdateSqlGenerator
-        {
-            public ConcreteSqlGenerator()
-                : base(
-                    new UpdateSqlGeneratorDependencies(
-                        new RelationalSqlGenerationHelper(
-                            new RelationalSqlGenerationHelperDependencies())))
-            {
-            }
-
-            protected override void AppendIdentityWhereCondition(StringBuilder commandStringBuilder, ColumnModificationBase columnModification)
-                => commandStringBuilder
-                    .Append(SqlGenerationHelper.DelimitIdentifier(columnModification.ColumnName))
-                    .Append(" = ")
-                    .Append("provider_specific_identity()");
-
-            protected override ResultSetMapping AppendSelectAffectedCountCommand(StringBuilder commandStringBuilder, string name, string schema, int commandPosition)
-            {
-                commandStringBuilder
-                    .Append("SELECT provider_specific_rowcount();" + Environment.NewLine + Environment.NewLine);
-
-                return ResultSetMapping.LastInResultSet;
-            }
-
-            protected override void AppendRowsAffectedWhereCondition(StringBuilder commandStringBuilder, int expectedRowsAffected)
-                => commandStringBuilder
-                    .Append("provider_specific_rowcount() = " + expectedRowsAffected);
-        }
     }
 }
