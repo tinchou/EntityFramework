@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Migrations.Design;
 using Microsoft.EntityFrameworkCore.Relational.Design.Specification.Tests.TestUtilities;
+using Microsoft.EntityFrameworkCore.Specification.Tests.TestUtilities.Xunit;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Xunit;
 
@@ -1818,7 +1819,7 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
 
         #region SeedData
 
-        [Fact]
+        [FrameworkSkipCondition(RuntimeFrameworks.CoreCLR, SkipReason = "System.Runtime binding error")]
         public virtual void SeedData_annotations_are_stored_in_snapshot()
         {
             Test(
@@ -1851,7 +1852,7 @@ builder.Entity(""Microsoft.EntityFrameworkCore.FunctionalTests.Migrations.ModelS
                     seed => Assert.Equal(42, seed["Id"])));
         }
 
-        [Fact]
+        [FrameworkSkipCondition(RuntimeFrameworks.CoreCLR, SkipReason="System.Runtime binding error")]
         public virtual void SeedData_for_multiple_entities_are_stored_in_model_snapshot()
         {
             Test(
