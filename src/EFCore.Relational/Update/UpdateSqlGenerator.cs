@@ -367,17 +367,17 @@ namespace Microsoft.EntityFrameworkCore.Update
 
         protected virtual void AppendWhereCondition(
             [NotNull] StringBuilder commandStringBuilder,
-            [NotNull] ColumnModificationBase ColumnModificationBase,
+            [NotNull] ColumnModificationBase columnModificationBase,
             bool useOriginalValue)
         {
             Check.NotNull(commandStringBuilder, nameof(commandStringBuilder));
-            Check.NotNull(ColumnModificationBase, nameof(ColumnModificationBase));
+            Check.NotNull(columnModificationBase, nameof(columnModificationBase));
 
-            SqlGenerationHelper.DelimitIdentifier(commandStringBuilder, ColumnModificationBase.ColumnName);
+            SqlGenerationHelper.DelimitIdentifier(commandStringBuilder, columnModificationBase.ColumnName);
 
             var parameterValue = useOriginalValue
-                ? ColumnModificationBase.OriginalValue
-                : ColumnModificationBase.Value;
+                ? columnModificationBase.OriginalValue
+                : columnModificationBase.Value;
 
             if (parameterValue == null)
             {
@@ -386,22 +386,22 @@ namespace Microsoft.EntityFrameworkCore.Update
             else
             {
                 commandStringBuilder.Append(" = ");
-                if (ColumnModificationBase.ParameterName == null)
+                if (columnModificationBase.ParameterName == null)
                 {
-                    SqlGenerationHelper.GenerateLiteral(commandStringBuilder, ColumnModificationBase.Value);
+                    SqlGenerationHelper.GenerateLiteral(commandStringBuilder, columnModificationBase.Value);
                 }
                 else
                 {
                     SqlGenerationHelper.GenerateParameterName(commandStringBuilder, useOriginalValue
-                        ? ColumnModificationBase.OriginalParameterName
-                        : ColumnModificationBase.ParameterName);
+                        ? columnModificationBase.OriginalParameterName
+                        : columnModificationBase.ParameterName);
                 }
             }
         }
 
         protected abstract void AppendIdentityWhereCondition(
             [NotNull] StringBuilder commandStringBuilder,
-            [NotNull] ColumnModificationBase ColumnModificationBase);
+            [NotNull] ColumnModificationBase columnModificationBase);
 
         public virtual void AppendBatchHeader(StringBuilder commandStringBuilder)
         {
