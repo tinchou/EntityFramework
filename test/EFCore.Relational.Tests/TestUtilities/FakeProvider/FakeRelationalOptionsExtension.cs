@@ -56,38 +56,5 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities.FakeProvi
 
             return serviceCollection;
         }
-
-        //
-        //
-        // TODO avoid copy-pasting from CommandBatchPreparerTest
-        //
-        //
-
-        private class TestModificationCommandBatchFactory : IModificationCommandBatchFactory
-        {
-            private readonly IRelationalCommandBuilderFactory _commandBuilderFactory;
-            private readonly ISqlGenerationHelper _sqlGenerationHelper;
-            private readonly IUpdateSqlGenerator _updateSqlGenerator;
-            private readonly IRelationalValueBufferFactoryFactory _valueBufferFactoryFactory;
-
-            public TestModificationCommandBatchFactory(
-                IRelationalCommandBuilderFactory commandBuilderfactory,
-                ISqlGenerationHelper sqlGenerationHelper,
-                IUpdateSqlGenerator updateSqlGenerator,
-                IRelationalValueBufferFactoryFactory valueBufferFactoryFactory)
-            {
-                _commandBuilderFactory = commandBuilderfactory;
-                _sqlGenerationHelper = sqlGenerationHelper;
-                _updateSqlGenerator = updateSqlGenerator;
-                _valueBufferFactoryFactory = valueBufferFactoryFactory;
-            }
-
-            public ModificationCommandBatch Create()
-                => new SingularModificationCommandBatch(
-                    _commandBuilderFactory,
-                    _sqlGenerationHelper,
-                    _updateSqlGenerator,
-                    _valueBufferFactoryFactory);
-        }
     }
 }
