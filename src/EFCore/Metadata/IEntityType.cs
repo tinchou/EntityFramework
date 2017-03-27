@@ -121,14 +121,10 @@ namespace Microsoft.EntityFrameworkCore.Metadata
 
         /// <summary>
         ///     <para>
-        ///         Gets the properties defined on this entity.
-        ///     </para>
-        ///     <para>
-        ///         This API only returns scalar properties and does not return navigation properties. Use
-        ///         <see cref="EntityTypeExtensions.GetNavigations(IEntityType)" /> to get navigation properties.
+        ///         Gets the seed data defined on this entity.
         ///     </para>
         /// </summary>
-        /// <returns> The properties defined on this entity. </returns>
+        /// <returns> The seed data defined on this entity. </returns>
         IEnumerable<IDictionary<string, object>> GetSeedData();
     }
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -14,11 +15,10 @@ using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities.FakeProvider;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Logging;
-using Xunit;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Update;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
 {
@@ -60,11 +60,11 @@ namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
                     new DbContextOptions<TContext>().WithExtension(new FakeRelationalOptionsExtension()),
                     idGenerator),
                 new MigrationsModelDiffer(
-                    Mock.Of<IStateManager>(),
-                    Mock.Of<ICommandBatchPreparer>(),
                     new TestRelationalTypeMapper(new RelationalTypeMapperDependencies()),
                     new TestAnnotationProvider(),
-                    new MigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),
+                    new MigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()),
+                    Mock.Of<IStateManager>(),
+                    Mock.Of<ICommandBatchPreparer>()),
                 idGenerator,
                 new CSharpMigrationsGenerator(code, new CSharpMigrationOperationGenerator(code), new CSharpSnapshotGenerator(code)),
                 new MockHistoryRepository(),

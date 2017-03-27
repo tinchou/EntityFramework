@@ -170,11 +170,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
                             }
                         }),
                     new MigrationsModelDiffer(
-                        Mock.Of<IStateManager>(),
-                        Mock.Of<ICommandBatchPreparer>(),
                         new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
-                        new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),
+                        new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()),
+                        Mock.Of<IStateManager>(),
+                        Mock.Of<ICommandBatchPreparer>()),
                     new SqlServerMigrationsSqlGenerator(
                         new MigrationsSqlGeneratorDependencies(
                             commandBuilderFactory,

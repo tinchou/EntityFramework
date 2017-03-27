@@ -667,7 +667,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
             Check.NotNull(data, nameof(data));
             Check.NotNull(stringBuilder, nameof(stringBuilder));
 
-            // TODO: don't iterate twice
             if (data.Count() == 0)
             {
                 return;
@@ -676,7 +675,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
             stringBuilder
                 .AppendLine()
                 .AppendLine()
-                .AppendLine("b.SeedData(new[]")
+                .AppendLine($"b.{nameof(EntityTypeBuilder.SeedData)}(new[]")
                 .AppendLine("{");
 
             using (stringBuilder.Indent())

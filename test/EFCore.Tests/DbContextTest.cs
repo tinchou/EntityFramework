@@ -263,11 +263,6 @@ namespace Microsoft.EntityFrameworkCore.Tests
                 throw new NotImplementedException();
             }
 
-            public InternalEntityEntry TryGetEntryFromUntracked(IEntityType baseEntityType, object entity)
-            {
-                throw new NotImplementedException();
-            }
-
             public IEnumerable<InternalEntityEntry> Entries => Entries ?? Enumerable.Empty<InternalEntityEntry>();
 
             public int ChangedCount { get; set; }

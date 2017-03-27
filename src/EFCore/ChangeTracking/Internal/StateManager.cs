@@ -161,8 +161,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             {
                 _trackingQueryMode = TrackingQueryMode.Multiple;
 
-                entry = _factory.Create(this, entityType, null /*we're not using it*/);
-                // TODO move this to InternalEntityEntryFactory
+                entry = _factory.Create(this, entityType, null /*InternalEntityEntryFactory doesn't set values for shadow entities*/);
                 entry.ToEntityEntry().CurrentValues.SetValues(values);
 
                 _entityReferenceMap[entry] = entry;

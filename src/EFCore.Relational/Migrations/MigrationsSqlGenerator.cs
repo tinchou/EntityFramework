@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Utilities;
+using System.Text;
 
 namespace Microsoft.EntityFrameworkCore.Migrations
 {
@@ -633,13 +634,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            var mybuilder = new System.Text.StringBuilder();
+            var sqlBuilder = new StringBuilder();
             Dependencies.UpdateSqlGenerator.AppendInsertOperation(
-                mybuilder,
+                sqlBuilder,
                 operation.ModificationCommand,
                 0);
 
-            builder.Append(mybuilder.ToString());
+            builder.Append(sqlBuilder.ToString());
             EndStatement(builder);
         }
 
@@ -651,13 +652,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            var mybuilder = new System.Text.StringBuilder();
+            var sqlBuilder = new StringBuilder();
             Dependencies.UpdateSqlGenerator.AppendDeleteOperation(
-                mybuilder,
+                sqlBuilder,
                 operation.ModificationCommand,
                 0);
 
-            builder.Append(mybuilder.ToString());
+            builder.Append(sqlBuilder.ToString());
             EndStatement(builder);
         }
 
@@ -669,13 +670,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
-            var mybuilder = new System.Text.StringBuilder();
+            var sqlBuilder = new StringBuilder();
             Dependencies.UpdateSqlGenerator.AppendUpdateOperation(
-                mybuilder,
+                sqlBuilder,
                 operation.ModificationCommand,
                 0);
 
-            builder.Append(mybuilder.ToString());
+            builder.Append(sqlBuilder.ToString());
             EndStatement(builder);
         }
 

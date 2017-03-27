@@ -49,7 +49,8 @@ namespace Microsoft.EntityFrameworkCore.Storage
         public override int SaveChanges(
             IReadOnlyList<IUpdateEntry> entries)
             => RelationalDependencies.BatchExecutor.Execute(
-                GetChanges(entries),
+                RelationalDependencies.BatchPreparer.BatchCommands(
+                    Check.NotNull(entries, nameof(entries))),
                 RelationalDependencies.Connection);
 
         /// <summary>
@@ -65,13 +66,9 @@ namespace Microsoft.EntityFrameworkCore.Storage
             IReadOnlyList<IUpdateEntry> entries,
             CancellationToken cancellationToken = default(CancellationToken))
             => RelationalDependencies.BatchExecutor.ExecuteAsync(
-                GetChanges(entries),
+                RelationalDependencies.BatchPreparer.BatchCommands(
+                    Check.NotNull(entries, nameof(entries))),
                 RelationalDependencies.Connection,
                 cancellationToken);
-
-        public virtual IEnumerable<ModificationCommandBatch> GetChanges(
-            [NotNull] IReadOnlyList<IUpdateEntry> entries)
-            => RelationalDependencies.BatchPreparer.BatchCommands(
-                Check.NotNull(entries, nameof(entries)));
     }
 }

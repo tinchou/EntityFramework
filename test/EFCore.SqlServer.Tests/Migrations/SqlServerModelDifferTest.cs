@@ -849,11 +849,11 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
 
         protected override MigrationsModelDiffer CreateModelDiffer(DbContext ctx)
             => new MigrationsModelDiffer(
-                ctx.GetService<IStateManager>(),
-                ctx.GetService<ICommandBatchPreparer>(),
                 new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                 new SqlServerAnnotationProvider(),
-                new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()));
+                new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()),
+                ctx.GetService<IStateManager>(),
+                ctx.GetService<ICommandBatchPreparer>());
 
         private bool? IsMemoryOptimized(Annotatable annotatable)
             => annotatable[SqlServerFullAnnotationNames.Instance.MemoryOptimized] as bool?;

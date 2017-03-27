@@ -9,10 +9,5 @@ namespace Microsoft.EntityFrameworkCore.Design.Tests
     public class ApiConsistencyTest : ApiConsistencyTestBase
     {
         protected override Assembly TargetAssembly => typeof(OperationExecutor).GetTypeInfo().Assembly;
-
-        public override void Public_inheritable_apis_should_be_virtual()
-        {
-            base.Public_inheritable_apis_should_be_virtual();
-        }
     }
 }

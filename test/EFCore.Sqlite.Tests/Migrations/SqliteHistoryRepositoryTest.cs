@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -116,11 +117,11 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
                             { typeof(SqliteOptionsExtension), new SqliteOptionsExtension() }
                         }),
                     new MigrationsModelDiffer(
-                        Mock.Of<IStateManager>(),
-                        Mock.Of<ICommandBatchPreparer>(),
                         new SqliteTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
-                        new SqliteMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies())),
+                        new SqliteMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()),
+                        Mock.Of<IStateManager>(),
+                        Mock.Of<ICommandBatchPreparer>()),
                     new SqliteMigrationsSqlGenerator(
                         new MigrationsSqlGeneratorDependencies(
                             new RelationalCommandBuilderFactory(

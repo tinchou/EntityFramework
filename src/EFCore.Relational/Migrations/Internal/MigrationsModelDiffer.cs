@@ -6,17 +6,16 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.EntityFrameworkCore.Utilities;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Update;
+using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Migrations.Internal
 {
@@ -65,39 +64,24 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public MigrationsModelDiffer(
-            [NotNull] IStateManager stateManager,
-            [NotNull] ICommandBatchPreparer batchPreparer,
             [NotNull] IRelationalTypeMapper typeMapper,
             [NotNull] IRelationalAnnotationProvider annotations,
-            [NotNull] IMigrationsAnnotationProvider migrationsAnnotations)
+            [NotNull] IMigrationsAnnotationProvider migrationsAnnotations,
+            [NotNull] IStateManager stateManager,
+            [NotNull] ICommandBatchPreparer batchPreparer)
         {
-            Check.NotNull(stateManager, nameof(stateManager));
-            Check.NotNull(batchPreparer, nameof(batchPreparer));
             Check.NotNull(typeMapper, nameof(typeMapper));
             Check.NotNull(annotations, nameof(annotations));
             Check.NotNull(migrationsAnnotations, nameof(migrationsAnnotations));
+            Check.NotNull(stateManager, nameof(stateManager));
+            Check.NotNull(batchPreparer, nameof(batchPreparer));
 
-            // TODO: we're not using the context, because even though we may have an empty
-            // model (e.g. first migration) we can still use the target IEntityTypes.
-
-            StateManager = stateManager;
-            BatchPreparer = batchPreparer;
             TypeMapper = typeMapper;
             Annotations = annotations;
             MigrationsAnnotations = migrationsAnnotations;
+            StateManager = stateManager;
+            BatchPreparer = batchPreparer;
         }
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        protected virtual IStateManager StateManager { get; }
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        protected virtual ICommandBatchPreparer BatchPreparer { get; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -116,6 +100,18 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         protected virtual IMigrationsAnnotationProvider MigrationsAnnotations { get; }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        protected virtual IStateManager StateManager { get; }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        protected virtual ICommandBatchPreparer BatchPreparer { get; }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -517,7 +513,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 yield return operation;
             }
 
-            // We do it after the previous operations so we can use the DiffContext property mappings
+            // We do this after running previous operations so we can use the DiffContext property mappings
             foreach (var operation in DiffSeedData(source, target, diffContext))
             {
                 yield return operation;
@@ -1221,11 +1217,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             Check.NotNull(target, nameof(target));
             Check.NotNull(diffContext, nameof(diffContext));
 
-            // We have to clean up for Down after Up
-            foreach (var entry in StateManager.Entries.ToList())
-            {
-                entry.SetEntityState(EntityState.Detached);
-            }
+            // We have to clean up for diffing Down operations after Up
+            StateManager.Reset();
 
             var propertiesMapping = source.GetProperties().ToDictionary(p => p.Name, p => diffContext.FindTarget(p)?.Name ?? p.Name);
             foreach (var sourceSeed in source.GetSeedData())
@@ -1250,9 +1243,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 }
             }
 
-            var entries = StateManager.GetMigrationOperationsToRun();
             return BatchPreparer
-                .BatchCommands(entries)
+                .BatchCommands(StateManager.GetMigrationOperationsToRun())
                 .SelectMany(o => o.ModificationCommands)
                 .Select(c => new ModificationOperation(c));
         }
@@ -1266,9 +1258,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
             }
 
-            var entries = StateManager.GetMigrationOperationsToRun();
             return BatchPreparer
-                .BatchCommands(entries)
+                .BatchCommands(StateManager.GetMigrationOperationsToRun())
                 .SelectMany(o => o.ModificationCommands)
                 .Select(c => new ModificationOperation(c));
         }

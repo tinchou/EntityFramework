@@ -1767,7 +1767,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         #region SeedData
 
-        private readonly HashSet<IDictionary<string, object>> _seedData = new HashSet<IDictionary<string, object>>();
+        private readonly List<IDictionary<string, object>> _seedData = new List<IDictionary<string, object>>();
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -1786,7 +1786,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
             [NotNull] object[] data)
         {
             var dicts = data.Select(d => d.GetType().GetRuntimeProperties().ToDictionary(x => x.Name, x => x.GetValue(d)));
-            _seedData.UnionWith(dicts);
+            _seedData.AddRange(dicts);
         }
 
         #endregion

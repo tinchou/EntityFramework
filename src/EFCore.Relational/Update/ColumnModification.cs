@@ -63,9 +63,8 @@ namespace Microsoft.EntityFrameworkCore.Update
 
         public override object Value => Entry.GetCurrentValue(Property);
 
-        public virtual void SetValue([NotNull] object value)
+        public virtual void SetValue([CanBeNull] object value)
         {
-            Check.NotNull(value, nameof(value));
             Entry.SetCurrentValue(Property, value);
         }
     }
