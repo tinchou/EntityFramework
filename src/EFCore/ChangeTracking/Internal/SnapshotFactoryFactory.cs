@@ -106,22 +106,43 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             {
                 var propertyBase = propertyBases[i];
 
-                var navigation = propertyBase as INavigation;
+                //var navigation = propertyBase as INavigation;
 
-                arguments[i] =
-                    navigation != null
-                    && navigation.IsCollection()
+                //var isShadowNavigation = propertyBase is INavigation && propertyBase.IsShadowProperty;
+
+                //arguments[i] = isShadowNavigation
+                //    ? Expression.Constant(null)
+                //    : (navigation != null && navigation.IsCollection())
+                //        ? Expression.Call(
+                //            null,
+                //            _snapshotCollectionMethod,
+                //            Expression.MakeMemberAccess(
+                //                entityVariable,
+                //                propertyBase.GetMemberInfo(forConstruction: false, forSet: false)))
+                //        : propertyBase.IsShadowProperty
+                //            ? CreateReadShadowValueExpression(parameter, propertyBase)
+                //            : Expression.MakeMemberAccess(
+                //                entityVariable,
+                //                propertyBase.GetMemberInfo(forConstruction: false, forSet: false));
+
+                if (propertyBase.IsShadowProperty)
+                {
+                    arguments[i] = propertyBase is INavigation
+                        ? Expression.Constant(null)
+                        : CreateReadShadowValueExpression(parameter, propertyBase);
+                }
+                else
+                {
+                    var memberAccess = Expression.MakeMemberAccess(
+                        entityVariable,
+                        propertyBase.GetMemberInfo(forConstruction: false, forSet: false));
+                    arguments[i] = (propertyBase as INavigation)?.IsCollection() ?? false
                         ? Expression.Call(
                             null,
                             _snapshotCollectionMethod,
-                            Expression.MakeMemberAccess(
-                                entityVariable,
-                                propertyBase.GetMemberInfo(forConstruction: false, forSet: false)))
-                        : propertyBase.IsShadowProperty
-                            ? CreateReadShadowValueExpression(parameter, propertyBase)
-                            : Expression.MakeMemberAccess(
-                                entityVariable,
-                                propertyBase.GetMemberInfo(forConstruction: false, forSet: false));
+                            memberAccess)
+                        : (Expression)memberAccess;
+                }
             }
 
             var constructorExpression = Expression.Convert(

@@ -683,7 +683,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                 var firstDatum = true;
                 foreach (var o in data)
                 {
-                    stringBuilder.Append("new { ");
                     if (!firstDatum)
                     {
                         stringBuilder.AppendLine(",");
@@ -693,23 +692,28 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                         firstDatum = false;
                     }
 
+                    stringBuilder.Append("new { ");
+
                     var firstProperty = true;
                     foreach (var property in properties)
                     {
-                        if (!firstProperty)
+                        if (o.TryGetValue(property.Name, out var value) && value != null)
                         {
-                            stringBuilder.Append(", ");
-                        }
-                        else
-                        {
-                            firstProperty = false;
-                        }
+                            if (!firstProperty)
+                            {
+                                stringBuilder.Append(", ");
+                            }
+                            else
+                            {
+                                firstProperty = false;
+                            }
 
-                        // this won't work with nested objects
-                        stringBuilder
-                            .Append(_code.Identifier(property.Name))
-                            .Append(" = ")
-                            .Append(_code.UnknownLiteral(o[property.Name]));
+                            // this won't work with nested objects
+                            stringBuilder
+                                .Append(_code.Identifier(property.Name))
+                                .Append(" = ")
+                                .Append(_code.UnknownLiteral(value));
+                        }
                     }
 
                     stringBuilder.Append(" }");

@@ -181,13 +181,12 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Null(c.Schema);
-                        Assert.Equal("Zebra", c.TableName);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal("equal", m.Value));
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Null(m.Schema);
+                        Assert.Equal("Zebra", m.Table);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(42, v),
+                            v => Assert.Equal("equal", v));
                     }));
         }
 
@@ -717,19 +716,18 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal("Firefly 1", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal("Firefly 1", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(43, m.Value),
-                            m => Assert.Equal("Firefly 2", m.Value));
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(43, v),
+                            v => Assert.Equal("Firefly 2", v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
@@ -741,10 +739,9 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Deleted, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(43, m.Value));
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(43, v));
                     }));
         }
 
@@ -821,10 +818,9 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Deleted, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(43, m.Value));
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(43, v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
@@ -836,19 +832,18 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal("Firefly 1", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal("Firefly 1", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(43, m.Value),
-                            m => Assert.Equal("Firefly 2", m.Value));
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(43, v),
+                            v => Assert.Equal("Firefly 2", v));
                     }));
         }
 
@@ -925,20 +920,20 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(99, m.Value),
-                            m => Assert.Equal("not equal2", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(99, v),
+                            v => Assert.Equal("not equal2", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(27, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(27, v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
@@ -951,20 +946,20 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(72, m.Value),
-                            m => Assert.Equal("not equal1", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(72, v),
+                            v => Assert.Equal("not equal1", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(32, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(32, v));
                     }));
         }
 
@@ -3595,13 +3590,12 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Null(c.Schema);
-                        Assert.Equal("Zebra", c.TableName);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal("equal", m.Value));
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Null(m.Schema);
+                        Assert.Equal("Zebra", m.Table);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(42, v),
+                            v => Assert.Equal("equal", v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
@@ -5536,16 +5530,18 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 upOps => Assert.Collection(upOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Equal(3, c.ColumnModifications.Count);
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(42, v),
+                            v => Assert.Equal(32, v),
+                            v => Assert.Equal(null, v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Deleted, c.EntityState);
-                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(42, m.Value));
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
                     }));
         }
 
@@ -5573,16 +5569,18 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 upOps => Assert.Collection(upOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Deleted, c.EntityState);
-                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(42, m.Value));
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Equal(3, c.ColumnModifications.Count);
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(42, v),
+                            v => Assert.Equal(32, v),
+                            v => Assert.Equal(null, v));
                     }));
         }
 
@@ -5615,38 +5613,38 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                 upOps => Assert.Collection(upOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(99, m.Value),
-                            m => Assert.Equal("not equal2", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(99, v),
+                            v => Assert.Equal("not equal2", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(27, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(27, v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(72, m.Value),
-                            m => Assert.Equal("not equal1", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(72, v),
+                            v => Assert.Equal("not equal1", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(32, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(32, v));
                     }));
         }
 
@@ -5691,24 +5689,24 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Equal("Cats", c.TableName);
-                        Assert.Equal("dbo", c.Schema);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(99, m.Value),
-                            m => Assert.Equal("not equal2", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Cats", m.Table);
+                        Assert.Equal("dbo", m.Schema);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(99, v),
+                            v => Assert.Equal("not equal2", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Equal("Cats", c.TableName);
-                        Assert.Equal("dbo", c.Schema);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(27, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Cats", m.Table);
+                        Assert.Equal("dbo", m.Schema);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(27, v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
@@ -5721,24 +5719,24 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Equal("Cat", c.TableName);
-                        Assert.Equal("dbo", c.Schema);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(72, m.Value),
-                            m => Assert.Equal("not equal1", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Cat", m.Table);
+                        Assert.Equal("dbo", m.Schema);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(72, v),
+                            v => Assert.Equal("not equal1", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Equal("Cat", c.TableName);
-                        Assert.Equal("dbo", c.Schema);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(32, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Cat", m.Table);
+                        Assert.Equal("dbo", m.Schema);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(32, v));
                     }));
         }
 
@@ -5755,7 +5753,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                         x.Property<string>("Value2");
                         x.SeedData(
                             new { Id = 99999, Value1 = 0, Value2 = "" }, // deleted
-                            new { Id = 42, Value1 = 32, Value2 = "equal" }, // modified
+                            new { Id = 42, Value1 = 32, Value2 = "equal", InvalidProperty = "is ignored" }, // modified
                             new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
                             new { Id = 24, Value1 = 72, Value2 = "not equal1" }); // modified
                     }),
@@ -5768,75 +5766,235 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations.Internal
                         x.Property<string>("Value2");
                         x.SeedData(
                             new { Id = 11111, Value1 = 0, Value2 = "" }, // added
-                            new { Id = 42, Value1 = 27, Value2 = "equal" }, // modified
+                            new { Id = 42, Value1 = 27, Value2 = "equal", InvalidProperty = "is ignored here too" }, // modified
                             new { Id = 8, Value1 = 100, Value2 = "equal" }, // unchanged
                             new { Id = 24, Value1 = 99, Value2 = "not equal2" }); // modified
                     }),
                 upOps => Assert.Collection(upOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Deleted, c.EntityState);
-                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(99999, m.Value));
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(99999, v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(99, m.Value),
-                            m => Assert.Equal("not equal2", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(99, v),
+                            v => Assert.Equal("not equal2", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(27, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(27, v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(11111, m.Value),
-                            m => Assert.Equal(0, m.Value),
-                            m => Assert.Equal("", m.Value));
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(11111, v),
+                            v => Assert.Equal(0, v),
+                            v => Assert.Equal("", v));
                     }),
                 downOps => Assert.Collection(downOps,
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Deleted, c.EntityState);
-                        Assert.Collection(c.ColumnModifications, m => Assert.Equal(11111, m.Value));
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(11111, v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(24, m.Value),
-                            m => Assert.Equal(72, m.Value),
-                            m => Assert.Equal("not equal1", m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(24, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(72, v),
+                            v => Assert.Equal("not equal1", v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Modified, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(42, m.Value),
-                            m => Assert.Equal(32, m.Value));
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(42, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(32, v));
                     },
                     o =>
                     {
-                        var c = Assert.IsType<ModificationCommand>(Assert.IsType<ModificationOperation>(o).ModificationCommand);
-                        Assert.Equal(EntityState.Added, c.EntityState);
-                        Assert.Collection(c.ColumnModifications,
-                            m => Assert.Equal(99999, m.Value),
-                            m => Assert.Equal(0, m.Value),
-                            m => Assert.Equal("", m.Value));
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(99999, v),
+                            v => Assert.Equal(0, v),
+                            v => Assert.Equal("", v));
+                    }));
+        }
+
+        [Fact]
+        public void SeedData_with_navigation_properties()
+        {
+            Execute(
+                source => {
+                    source.Entity(
+                        "Blog",
+                        x =>
+                        {
+                            x.Property<int>("BlogId");
+                            x.Property<string>("Url");
+                            x.SeedData(
+                                new { BlogId = 32, Url = "original.url" });
+                        });
+                    source.Entity(
+                        "Post",
+                        x =>
+                        {
+                            x.Property<int>("PostId");
+                            x.Property<string>("Title");
+                            x.HasOne("Blog", "Blog")
+                                .WithMany("Posts")
+                                .HasForeignKey("BlogId")
+                                .OnDelete(DeleteBehavior.Cascade);
+                            x.SeedData(
+                                new { PostId = 545, Title = "Original Title", BlogId = 32 },
+                                new { PostId = 416, Title = "Post To Non-existent BlogId", BlogId = 316 },
+                                new { PostId = 390, Title = "Post To Be Removed", BlogId = 32 });
+                        });
+                },
+                target => {
+                    target.Entity(
+                        "Blog",
+                        x =>
+                        {
+                            x.Property<int>("BlogId");
+                            x.Property<string>("Url");
+                            x.SeedData(
+                                new { BlogId = 32, Url = "updated.url" },
+                                new { BlogId = 38, Url = "newblog.url" },
+                                new { BlogId = 316, Url = "nowitexists.blog" });
+                        });
+                    target.Entity(
+                        "Post",
+                        x =>
+                        {
+                            x.Property<int>("PostId");
+                            x.Property<string>("Title");
+                            x.HasOne("Blog", "Blog")
+                                .WithMany("Posts")
+                                .HasForeignKey("BlogId")
+                                .OnDelete(DeleteBehavior.Cascade);
+                            x.SeedData(
+                                new { PostId = 416, Title = "Post To Non-existent BlogId", BlogId = 316 },
+                                new { PostId = 545, Title = "Updated Title", BlogId = 38 },
+                                new { PostId = 546, Title = "New Post", BlogId = 32 });
+                        });
+                },
+                upOps => Assert.Collection(upOps,
+                    o =>
+                    {
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Blog", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(32, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal("updated.url", v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Equal("Blog", m.Table);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(38, v),
+                            v => Assert.Equal("newblog.url", v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Equal("Blog", m.Table);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(316, v),
+                            v => Assert.Equal("nowitexists.blog", v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Equal("Post", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(390, v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Equal("Post", m.Table);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(546, v),
+                            v => Assert.Equal(32, v),
+                            v => Assert.Equal("New Post", v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Post", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(545, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(38, v),
+                            v => Assert.Equal("Updated Title", v));
+                    }),
+                downOps => Assert.Collection(downOps,
+                    o =>
+                    {
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Equal("Blog", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(316, v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Blog", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(32, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal("original.url", v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Equal("Post", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(546, v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<UpdateOperation>(o);
+                        Assert.Equal("Post", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(545, v));
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(32, v),
+                            v => Assert.Equal("Original Title", v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<InsertOperation>(o);
+                        Assert.Equal("Post", m.Table);
+                        Assert.Collection(m.Values,
+                            v => Assert.Equal(390, v),
+                            v => Assert.Equal(32, v),
+                            v => Assert.Equal("Post To Be Removed", v));
+                    },
+                    o =>
+                    {
+                        var m = Assert.IsType<DeleteOperation>(o);
+                        Assert.Equal("Blog", m.Table);
+                        Assert.Collection(m.KeyValues,
+                            v => Assert.Equal(38, v));
                     }));
         }
 

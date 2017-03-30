@@ -161,11 +161,23 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             {
                 _trackingQueryMode = TrackingQueryMode.Multiple;
 
-                entry = _factory.Create(this, entityType, null /*InternalEntityEntryFactory doesn't set values for shadow entities*/);
-                entry.ToEntityEntry().CurrentValues.SetValues(values);
-
-                _entityReferenceMap[entry] = entry;
+                // This has a problem with non-shadow entity types
+                //entry = _factory.Create(this, entityType, null /*InternalEntityEntryFactory doesn't set values for shadow entities*/);
+                // TODO we could set values here, but we'd also need an overload for an IDictionary
+                if (entityType.HasClrType())
+                {
+                    var entity = Activator.CreateInstance(entityType.ClrType);
+                    entry = _factory.Create(this, entityType, entity);
+                    _entityReferenceMap[entity] = entry;
+                }
+                else
+                {
+                    entry = new InternalShadowEntityEntry(this, entityType);
+                    _entityReferenceMap[entry] = entry;
+                }
             }
+
+            entry.ToEntityEntry().CurrentValues.SetValues(values);
             return entry;
         }
 
@@ -513,6 +525,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         public virtual void Reset()
         {
             Unsubscribe();
+            ChangedCount = 0;
             _entityReferenceMap.Clear();
             _dietReferenceMap.Clear();
 

@@ -59,6 +59,13 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             typeof(CreateIndexOperation)
         };
 
+        private static readonly Type[] _modificationOperationTypes =
+        {
+            typeof(InsertOperation),
+            typeof(UpdateOperation),
+            typeof(DeleteOperation)
+        };
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -157,7 +164,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             var constraintOperations = new List<MigrationOperation>();
             var renameOperations = new List<MigrationOperation>();
             var renameTableOperations = new List<MigrationOperation>();
-            var dataMotionOperations = new List<MigrationOperation>();
+            var modificationOperations = new List<MigrationOperation>();
             var leftovers = new List<MigrationOperation>();
 
             foreach (var operation in operations)
@@ -230,9 +237,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 {
                     renameTableOperations.Add(operation);
                 }
-                else if (type == typeof(ModificationOperation))
+                else if (_modificationOperationTypes.Contains(type))
                 {
-                    dataMotionOperations.Add(operation);
+                    modificationOperations.Add(operation);
                 }
                 else
                 {
@@ -315,7 +322,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 .Concat(restartSequenceOperations)
                 .Concat(createTableOperations)
                 .Concat(constraintOperations)
-                .Concat(dataMotionOperations)
+                .Concat(modificationOperations)
                 .Concat(leftovers)
                 .ToList();
         }
@@ -330,7 +337,11 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             [CanBeNull] IModel source,
             [CanBeNull] IModel target,
             [NotNull] DiffContext diffContext)
-            => source != null && target != null
+        {
+            // We have to clean up for diffing Down operations after Up
+            StateManager.Reset();
+
+            var schemaOperations = ((source != null) && (target != null)
                 ? DiffAnnotations(source, target)
                     .Concat(Diff(GetSchemas(source), GetSchemas(target)))
                     .Concat(Diff(diffContext.GetSourceTables(), diffContext.GetTargetTables(), diffContext))
@@ -343,7 +354,44 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                     ? Add(target, diffContext)
                     : source != null
                         ? Remove(source, diffContext)
-                        : Enumerable.Empty<MigrationOperation>();
+                        : Enumerable.Empty<MigrationOperation>());
+            // ToList() ensures we have diffed the schema before calling GetModificationOperations
+            return schemaOperations.ToList().Concat(GetModificationOperations(StateManager, BatchPreparer));
+        }
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
+        protected virtual IEnumerable<MigrationOperation> GetModificationOperations(IStateManager StateManager, ICommandBatchPreparer BatchPreparer)
+        {
+            return BatchPreparer
+                .BatchCommands(StateManager.GetMigrationOperationsToRun())
+                .SelectMany(o => o.ModificationCommands)
+                .Select<ModificationCommand, MigrationOperation>(c =>
+                {
+                    if (c.EntityState == EntityState.Added)
+                        return new InsertOperation(
+                            c.Schema,
+                            c.TableName,
+                            c.ColumnModificationsBase.Select(col => col.ColumnName).ToArray(),
+                            c.ColumnModificationsBase.Select(col => col.Value).ToArray());
+                    else if (c.EntityState == EntityState.Modified)
+                        return new UpdateOperation(
+                            c.Schema,
+                            c.TableName,
+                            c.ColumnModificationsBase.Where(col => col.IsKey).Select(col => col.ColumnName).ToArray(),
+                            c.ColumnModificationsBase.Where(col => col.IsKey).Select(col => col.Value).ToArray(),
+                            c.ColumnModificationsBase.Where(col => !col.IsKey).Select(col => col.ColumnName).ToArray(),
+                            c.ColumnModificationsBase.Where(col => !col.IsKey).Select(col => col.Value).ToArray());
+                    else
+                        return new DeleteOperation(
+                            c.Schema,
+                            c.TableName,
+                            c.ColumnModificationsBase.Select(col => col.ColumnName).ToArray(),
+                            c.ColumnModificationsBase.Select(col => col.Value).ToArray());
+                });
+        }
 
         private IEnumerable<MigrationOperation> DiffAnnotations(
             IModel source,
@@ -513,11 +561,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 yield return operation;
             }
 
-            // We do this after running previous operations so we can use the DiffContext property mappings
-            foreach (var operation in DiffSeedData(source, target, diffContext))
-            {
-                yield return operation;
-            }
+            // We do this after running previous operations so we can use the DiffContext property mappings.
+            // It'll update the StateManager instead of returning operations. Check it at the end.
+            DiffSeedData(source, target, diffContext);
         }
 
         private IEnumerable<MigrationOperation> DiffAnnotations(
@@ -575,10 +621,8 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 yield return operation;
             }
 
-            foreach (var operation in AddSeedData(target))
-            {
-                yield return operation;
-            }
+            // It'll update the StateManager instead of returning operations. Check it at the end.
+            AddSeedData(target);
         }
 
         /// <summary>
@@ -1208,7 +1252,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        protected virtual IEnumerable<MigrationOperation> DiffSeedData(
+        protected virtual void DiffSeedData(
             [NotNull] IEntityType source,
             [NotNull] IEntityType target,
             [NotNull] DiffContext diffContext)
@@ -1216,9 +1260,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             Check.NotNull(source, nameof(source));
             Check.NotNull(target, nameof(target));
             Check.NotNull(diffContext, nameof(diffContext));
-
-            // We have to clean up for diffing Down operations after Up
-            StateManager.Reset();
 
             var propertiesMapping = source.GetProperties().ToDictionary(p => p.Name, p => diffContext.FindTarget(p)?.Name ?? p.Name);
             foreach (var sourceSeed in source.GetSeedData())
@@ -1242,14 +1283,9 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                     StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
                 }
             }
-
-            return BatchPreparer
-                .BatchCommands(StateManager.GetMigrationOperationsToRun())
-                .SelectMany(o => o.ModificationCommands)
-                .Select(c => new ModificationOperation(c));
         }
 
-        protected virtual IEnumerable<MigrationOperation> AddSeedData([NotNull] IEntityType target)
+        protected virtual void AddSeedData([NotNull] IEntityType target)
         {
             Check.NotNull(target, nameof(target));
 
@@ -1257,11 +1293,6 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             {
                 StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
             }
-
-            return BatchPreparer
-                .BatchCommands(StateManager.GetMigrationOperationsToRun())
-                .SelectMany(o => o.ModificationCommands)
-                .Select(c => new ModificationOperation(c));
         }
 
         #endregion

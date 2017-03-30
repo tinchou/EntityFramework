@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Utilities;
 
 namespace Microsoft.EntityFrameworkCore.Migrations.Operations
 {
-    public class ModificationOperation : MigrationOperation
+    public abstract class ModificationOperation : MigrationOperation
     {
         public ModificationOperation([NotNull] ModificationCommandBase modificationCommandBase)
         {

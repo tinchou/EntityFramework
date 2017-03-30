@@ -1784,10 +1784,13 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public virtual void AddSeedData(
             [NotNull] object[] data)
-        {
-            var dicts = data.Select(d => d.GetType().GetRuntimeProperties().ToDictionary(x => x.Name, x => x.GetValue(d)));
-            _seedData.AddRange(dicts);
-        }
+            // Using the properties means that we need to set up all properties before calling SeedData for things to work as expected.
+            // I'm thinking I could store the original object and only convert it on GetSeedData, which is called after model building ends.
+            => _seedData.AddRange(data.Select(d =>
+                GetProperties() // we'll ignore invalid and navigation properties
+                    .Select(p => d.GetType().GetRuntimeProperty(p.Name))
+                    .Where(p => p != null)
+                    .ToDictionary(p => p.Name, p => p.GetValue(d))));
 
         #endregion
 
