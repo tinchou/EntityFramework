@@ -159,6 +159,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
             var entry = TryGetEntry(values);
             if (entry == null)
             {
+                object entity;
                 _trackingQueryMode = TrackingQueryMode.Multiple;
 
                 // This has a problem with non-shadow entity types
@@ -166,15 +167,16 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                 // TODO we could set values here, but we'd also need an overload for an IDictionary
                 if (entityType.HasClrType())
                 {
-                    var entity = Activator.CreateInstance(entityType.ClrType);
+                    entity = Activator.CreateInstance(entityType.ClrType);
                     entry = _factory.Create(this, entityType, entity);
-                    _entityReferenceMap[entity] = entry;
                 }
                 else
                 {
                     entry = new InternalShadowEntityEntry(this, entityType);
-                    _entityReferenceMap[entry] = entry;
+                    entity = entry;
                 }
+
+                _entityReferenceMap[entity] = entry;
             }
 
             entry.ToEntityEntry().CurrentValues.SetValues(values);
