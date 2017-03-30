@@ -95,9 +95,9 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                     if (property == foreignKey.Properties[propertyIndex])
                     {
                         // We don't support shadow navigations yet
-                        var principal = foreignKey.DependentToPrincipal.IsShadowProperty
+                        var principal = foreignKey.DependentToPrincipal?.IsShadowProperty ?? true
                             ? null
-                            : foreignKey.DependentToPrincipal?.GetGetter().GetClrValue(entry.Entity);
+                            : foreignKey.DependentToPrincipal.GetGetter().GetClrValue(entry.Entity);
                         InternalEntityEntry principalEntry = null;
                         if (principal != null)
                         {
