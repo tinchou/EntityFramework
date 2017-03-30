@@ -315,8 +315,10 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Migrations
             base.InsertOperation_one_row();
 
             Assert.Equal(
+                "SET IDENTITY_INSERT \"People\" ON;" + EOL +
                 "INSERT INTO \"People\" (\"Id\", \"Full Name\")" + EOL +
-                "VALUES (1, 'Daenerys Targaryen');" + EOL,
+                "VALUES (1, 'Daenerys Targaryen');" + EOL +
+                "SET IDENTITY_INSERT \"People\" OFF;" + EOL,
                 Sql);
         }
 

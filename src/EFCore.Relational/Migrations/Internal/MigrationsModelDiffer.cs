@@ -356,41 +356,48 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                         ? Remove(source, diffContext)
                         : Enumerable.Empty<MigrationOperation>());
             // ToList() ensures we have diffed the schema before calling GetModificationOperations
-            return schemaOperations.ToList().Concat(GetModificationOperations(StateManager, BatchPreparer));
+            return schemaOperations.ToList().Concat(GetModificationOperations());
         }
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        protected virtual IEnumerable<MigrationOperation> GetModificationOperations(IStateManager StateManager, ICommandBatchPreparer BatchPreparer)
+        protected virtual IEnumerable<MigrationOperation> GetModificationOperations()
         {
-            return BatchPreparer
+            var batchCommands = BatchPreparer
                 .BatchCommands(StateManager.GetMigrationOperationsToRun())
-                .SelectMany(o => o.ModificationCommands)
-                .Select<ModificationCommand, MigrationOperation>(c =>
+                .SelectMany(o => o.ModificationCommands);
+
+            foreach (var c in batchCommands)
+            {
+                if (c.EntityState == EntityState.Added)
                 {
-                    if (c.EntityState == EntityState.Added)
-                        return new InsertOperation(
+                    yield return new InsertOperation(
                             c.Schema,
                             c.TableName,
                             c.ColumnModificationsBase.Select(col => col.ColumnName).ToArray(),
                             c.ColumnModificationsBase.Select(col => col.Value).ToArray());
-                    else if (c.EntityState == EntityState.Modified)
-                        return new UpdateOperation(
+                }
+                else if (c.EntityState == EntityState.Modified)
+                {
+                    yield return new UpdateOperation(
                             c.Schema,
                             c.TableName,
                             c.ColumnModificationsBase.Where(col => col.IsKey).Select(col => col.ColumnName).ToArray(),
                             c.ColumnModificationsBase.Where(col => col.IsKey).Select(col => col.Value).ToArray(),
                             c.ColumnModificationsBase.Where(col => !col.IsKey).Select(col => col.ColumnName).ToArray(),
                             c.ColumnModificationsBase.Where(col => !col.IsKey).Select(col => col.Value).ToArray());
-                    else
-                        return new DeleteOperation(
+                }
+                else
+                {
+                    yield return new DeleteOperation(
                             c.Schema,
                             c.TableName,
                             c.ColumnModificationsBase.Select(col => col.ColumnName).ToArray(),
                             c.ColumnModificationsBase.Select(col => col.Value).ToArray());
-                });
+                }
+            }
         }
 
         private IEnumerable<MigrationOperation> DiffAnnotations(

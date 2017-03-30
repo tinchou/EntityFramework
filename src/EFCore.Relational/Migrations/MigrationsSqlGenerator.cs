@@ -634,13 +634,26 @@ namespace Microsoft.EntityFrameworkCore.Migrations
             Check.NotNull(operation, nameof(operation));
             Check.NotNull(builder, nameof(builder));
 
+            // TODO figure out if we could turn off this check only when it's needed
+            builder
+                .Append("SET IDENTITY_INSERT ")
+                .Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
+                .Append(" ON")
+                .AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
+
             var sqlBuilder = new StringBuilder();
             Dependencies.UpdateSqlGenerator.AppendInsertOperation(
                 sqlBuilder,
                 operation.ModificationCommand,
                 0);
-
             builder.Append(sqlBuilder.ToString());
+
+            builder
+                .Append("SET IDENTITY_INSERT ")
+                .Append(Dependencies.SqlGenerationHelper.DelimitIdentifier(operation.Table, operation.Schema))
+                .Append(" OFF")
+                .AppendLine(Dependencies.SqlGenerationHelper.StatementTerminator);
+
             EndStatement(builder);
         }
 

@@ -1767,7 +1767,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         #region SeedData
 
-        private readonly List<IDictionary<string, object>> _seedData = new List<IDictionary<string, object>>();
+        // we use a hashset of the original values because we might get multiple calls and don't want repeated seeds
+        private readonly HashSet<object> _seedData = new HashSet<object>();
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -1775,7 +1776,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public virtual IEnumerable<IDictionary<string, object>> GetSeedData()
         {
-            return _seedData;
+            // We do this here because on AddSeedData we're still generating the properties
+            return _seedData.Select(d =>
+                GetProperties() // we'll ignore invalid and navigation properties
+                    .Select(p => d.GetType().GetRuntimeProperty(p.Name))
+                    .Where(p => p != null)
+                    .ToDictionary(p => p.Name, p => p.GetValue(d)));
         }
 
         /// <summary>
@@ -1784,13 +1790,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public virtual void AddSeedData(
             [NotNull] object[] data)
-            // Using the properties means that we need to set up all properties before calling SeedData for things to work as expected.
-            // I'm thinking I could store the original object and only convert it on GetSeedData, which is called after model building ends.
-            => _seedData.AddRange(data.Select(d =>
-                GetProperties() // we'll ignore invalid and navigation properties
-                    .Select(p => d.GetType().GetRuntimeProperty(p.Name))
-                    .Where(p => p != null)
-                    .ToDictionary(p => p.Name, p => p.GetValue(d))));
+            => _seedData.UnionWith(data);
 
         #endregion
 
