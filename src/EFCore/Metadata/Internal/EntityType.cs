@@ -36,6 +36,9 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         private readonly SortedDictionary<IReadOnlyList<IProperty>, Key> _keys
             = new SortedDictionary<IReadOnlyList<IProperty>, Key>(PropertyListComparer.Instance);
 
+        private readonly SortedSet<object> _seedData
+            = new SortedSet<object>();
+
         private Key _primaryKey;
         private EntityType _baseType;
         private LambdaExpression _filter;
@@ -1767,30 +1770,16 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
 
         #region SeedData
 
-        // we use a hashset of the original values because we might get multiple calls and don't want repeated seeds
-        private readonly HashSet<object> _seedData = new HashSet<object>();
-
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public virtual IEnumerable<IDictionary<string, object>> GetSeedData()
-        {
-            // We do this here because on AddSeedData we're still generating the properties
-            return _seedData.Select(d =>
-                GetProperties() // we'll ignore invalid and navigation properties
-                    .Select(p => d.GetType().GetRuntimeProperty(p.Name))
+            => _seedData.Select(seed =>
+                GetProperties() // we'll ignore invalid and navigation properties on the seeds
+                    .Select(p => seed.GetType().GetRuntimeProperty(p.Name))
                     .Where(p => p != null)
-                    .ToDictionary(p => p.Name, p => p.GetValue(d)));
-        }
-
-        /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public virtual void AddSeedData(
-            [NotNull] object[] data)
-            => _seedData.UnionWith(data);
+                    .ToDictionary(p => p.Name, p => p.GetValue(seed)));
 
         #endregion
 
@@ -1865,6 +1854,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         IEnumerable<IProperty> IEntityType.GetProperties() => GetProperties();
         IEnumerable<IMutableProperty> IMutableEntityType.GetProperties() => GetProperties();
         IMutableProperty IMutableEntityType.RemoveProperty(string name) => RemoveProperty(name);
+
+        void IMutableEntityType.AddSeedData(params object[] data) => _seedData.UnionWith(data);
 
         #endregion
 

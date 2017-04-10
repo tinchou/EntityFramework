@@ -540,7 +540,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Builders
         {
             Check.NotNull(data, nameof(data));
 
-            Builder.HasSeedData(data);
+            Metadata.AddSeedData(data);
 
             return this;
         }
