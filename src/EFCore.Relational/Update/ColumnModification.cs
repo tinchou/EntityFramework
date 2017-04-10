@@ -10,8 +10,6 @@ namespace Microsoft.EntityFrameworkCore.Update
 {
     public class ColumnModification : ColumnModificationBase
     {
-        private string _parameterName;
-        private string _originalParameterName;
         private readonly Func<string> _generateParameterName;
 
         public ColumnModification(
@@ -54,10 +52,10 @@ namespace Microsoft.EntityFrameworkCore.Update
         public virtual bool UseCurrentValueParameter => IsWrite || (IsCondition && !IsConcurrencyToken);
 
         public override string ParameterName
-            => _parameterName ?? (_parameterName = _generateParameterName());
+            => base.ParameterName ?? (base.ParameterName = _generateParameterName());
 
         public override string OriginalParameterName
-            => _originalParameterName ?? (_originalParameterName = _generateParameterName());
+            => base.OriginalParameterName ?? (base.OriginalParameterName = _generateParameterName());
 
         public override object OriginalValue => Entry.GetOriginalValue(Property);
 

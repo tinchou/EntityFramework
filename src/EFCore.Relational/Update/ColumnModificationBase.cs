@@ -34,9 +34,9 @@ namespace Microsoft.EntityFrameworkCore.Update
 
         public virtual string ColumnName { get; }
 
-        public virtual string ParameterName { get; }
+        public virtual string ParameterName { get; protected set; }
 
-        public virtual string OriginalParameterName { get; }
+        public virtual string OriginalParameterName { get; protected set; }
 
         public virtual bool IsRead { get; }
 
