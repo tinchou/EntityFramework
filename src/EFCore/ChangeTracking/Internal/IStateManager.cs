@@ -34,7 +34,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        InternalEntityEntry GetOrCreateShadowEntryWithValues([NotNull] IEntityType entityType, [NotNull] IDictionary<string, object> values);
+        InternalEntityEntry GetOrCreateEntry([NotNull] IDictionary<string, object> values, [NotNull] IEntityType entityType);
 
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
@@ -177,6 +177,12 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+        IReadOnlyList<InternalEntityEntry> GetEntriesToSave();
+
+        /// <summary>
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
+        /// </summary>
         int SaveChanges(bool acceptAllChangesOnSuccess);
 
         /// <summary>
@@ -214,11 +220,5 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         void Unsubscribe();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        List<InternalEntityEntry> GetMigrationOperationsToRun();
     }
 }

@@ -154,7 +154,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         /// <summary>
         ///     TODO
         /// </summary>
-        public virtual InternalEntityEntry GetOrCreateShadowEntryWithValues(IEntityType entityType, IDictionary<string, object> values)
+        public virtual InternalEntityEntry GetOrCreateEntry(IDictionary<string, object> values, IEntityType entityType)
         {
             var entry = TryGetEntry(values);
             if (entry == null)
@@ -741,15 +741,10 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         }
 
         /// <summary>
-        /// 
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
-        /// <returns></returns>
-        public virtual List<InternalEntityEntry> GetMigrationOperationsToRun()
-        {
-            return GetEntriesToSave();
-        }
-
-        private List<InternalEntityEntry> GetEntriesToSave()
+        public virtual IReadOnlyList<InternalEntityEntry> GetEntriesToSave()
         {
             foreach (var entry in Entries.Where(
                 e => (e.EntityState == EntityState.Modified

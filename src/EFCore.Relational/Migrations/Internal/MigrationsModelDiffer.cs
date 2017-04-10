@@ -366,7 +366,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         protected virtual IEnumerable<MigrationOperation> GetModificationOperations()
         {
             var batchCommands = BatchPreparer
-                .BatchCommands(StateManager.GetMigrationOperationsToRun())
+                .BatchCommands(StateManager.GetEntriesToSave())
                 .SelectMany(o => o.ModificationCommands);
 
             foreach (var c in batchCommands)
@@ -1272,7 +1272,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             foreach (var sourceSeed in source.GetSeedData())
             {
                 var mappedSourceSeed = sourceSeed.ToDictionary(kvp => propertiesMapping[kvp.Key], kvp => kvp.Value);
-                StateManager.GetOrCreateShadowEntryWithValues(target, mappedSourceSeed).SetEntityState(EntityState.Deleted);
+                StateManager.GetOrCreateEntry(mappedSourceSeed, target).SetEntityState(EntityState.Deleted);
             }
 
             var key = target.FindPrimaryKey();
@@ -1287,7 +1287,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 }
                 else
                 {
-                    StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
+                    StateManager.GetOrCreateEntry(targetSeed, target).SetEntityState(EntityState.Added);
                 }
             }
         }
@@ -1298,7 +1298,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
 
             foreach (var targetSeed in target.GetSeedData())
             {
-                StateManager.GetOrCreateShadowEntryWithValues(target, targetSeed).SetEntityState(EntityState.Added);
+                StateManager.GetOrCreateEntry(targetSeed, target).SetEntityState(EntityState.Added);
             }
         }
 

@@ -172,11 +172,6 @@ namespace Microsoft.EntityFrameworkCore.Tests
                 throw new NotImplementedException();
             }
 
-            public List<InternalEntityEntry> GetMigrationOperationsToRun()
-            {
-                throw new NotImplementedException();
-            }
-
             public void UpdateDependentMap(InternalEntityEntry entry, IForeignKey foreignKey)
             {
                 throw new NotImplementedException();
@@ -193,6 +188,11 @@ namespace Microsoft.EntityFrameworkCore.Tests
             }
 
             public IEnumerable<InternalEntityEntry> GetDependentsFromNavigation(InternalEntityEntry principalEntry, IForeignKey foreignKey)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IReadOnlyList<InternalEntityEntry> GetEntriesToSave()
             {
                 throw new NotImplementedException();
             }
@@ -224,7 +224,7 @@ namespace Microsoft.EntityFrameworkCore.Tests
                 throw new NotImplementedException();
             }
 
-            public InternalEntityEntry GetOrCreateShadowEntryWithValues(IEntityType entityType, IDictionary<string, object> values)
+            public InternalEntityEntry GetOrCreateEntry(IDictionary<string, object> values, IEntityType entityType)
             {
                 throw new NotImplementedException();
             }
