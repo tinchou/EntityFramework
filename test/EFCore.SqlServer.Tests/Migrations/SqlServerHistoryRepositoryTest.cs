@@ -1,7 +1,6 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -9,9 +8,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
+using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities.FakeProvider;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
-using Microsoft.EntityFrameworkCore.Update;
+using Microsoft.EntityFrameworkCore.Tests.TestUtilities;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -173,12 +173,12 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Tests.Migrations
                         new SqlServerTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqlServerMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()),
-                        Mock.Of<IStateManager>(),
-                        Mock.Of<ICommandBatchPreparer>()),
+                        new FakeStateManager(),
+                        RelationalTestHelpers.Instance.CreateCommandBatchPreparer()),
                     new SqlServerMigrationsSqlGenerator(
                         new MigrationsSqlGeneratorDependencies(
                             commandBuilderFactory,
-                            Mock.Of<IUpdateSqlGenerator>(),
+                            new ConcreteSqlGenerator(),
                             new SqlServerSqlGenerationHelper(new RelationalSqlGenerationHelperDependencies()),
                             typeMapper,
                             annotationsProvider),

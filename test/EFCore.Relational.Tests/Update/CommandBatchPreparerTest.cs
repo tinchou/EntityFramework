@@ -30,7 +30,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
 
             entry.SetEntityState(EntityState.Added);
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToArray();
             Assert.Equal(1, commandBatches.Length);
             Assert.Equal(1, commandBatches.First().ModificationCommands.Count);
 
@@ -69,7 +69,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             entry.SetEntityState(EntityState.Modified);
             entry.SetPropertyModified(entry.EntityType.FindPrimaryKey().Properties.Single(), isModified: false);
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToArray();
             Assert.Equal(1, commandBatches.Length);
             Assert.Equal(1, commandBatches.First().ModificationCommands.Count);
 
@@ -107,7 +107,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
 
             entry.SetEntityState(EntityState.Deleted);
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToArray();
             Assert.Equal(1, commandBatches.Length);
             Assert.Equal(1, commandBatches.First().ModificationCommands.Count);
 
@@ -138,7 +138,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             var relatedentry = stateManager.GetOrCreateEntry(new RelatedFakeEntity { Id = 42 });
             relatedentry.SetEntityState(EntityState.Added);
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { relatedentry, entry }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { relatedentry, entry }).ToArray();
 
             Assert.Equal(
                 new[] { entry, relatedentry },
@@ -158,7 +158,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             relatedentry.SetEntityState(EntityState.Modified);
             relatedentry.SetPropertyModified(relatedentry.EntityType.FindProperty(nameof(RelatedFakeEntity.RelatedId)));
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { relatedentry, entry }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { relatedentry, entry }).ToArray();
 
             Assert.Equal(
                 new[] { entry, relatedentry },
@@ -177,7 +177,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             var secondentry = stateManager.GetOrCreateEntry(new RelatedFakeEntity { Id = 1 });
             secondentry.SetEntityState(EntityState.Added);
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { secondentry, firstentry }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { secondentry, firstentry }).ToArray();
 
             Assert.Equal(
                 new[] { firstentry, secondentry },
@@ -201,7 +201,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             relatedEntry.SetOriginalValue(relatedEntry.EntityType.FindProperty("RelatedId"), 42);
             relatedEntry.SetPropertyModified(relatedEntry.EntityType.FindPrimaryKey().Properties.Single(), isModified: false);
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { relatedEntry, previousParent, newParent }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { relatedEntry, previousParent, newParent }).ToArray();
 
             Assert.Equal(
                 new[] { newParent, relatedEntry, previousParent },
@@ -223,7 +223,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             var newChild = stateManager.GetOrCreateEntry(new RelatedFakeEntity { Id = 23, RelatedId = 1 });
             newChild.SetEntityState(EntityState.Added);
 
-            var commandBatches = CreateCommandBatchPreparer().BatchCommands(new[] { newChild, previousChild }).ToArray();
+            var commandBatches = RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { newChild, previousChild }).ToArray();
 
             Assert.Equal(
                 new[] { previousChild, newChild },
@@ -251,7 +251,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             var newChildEntity = stateManager.GetOrCreateEntry(new AnotherFakeEntity { Id = 5, AnotherId = 4 });
             newChildEntity.SetEntityState(EntityState.Added);
 
-            var sortedEntities = CreateCommandBatchPreparer()
+            var sortedEntities = RelationalTestHelpers.Instance.CreateCommandBatchPreparer()
                 .BatchCommands(new[] { newEntity, newChildEntity, oldEntity, oldChildEntity })
                 .Select(cb => cb.ModificationCommands.Single()).Select(mc => mc.Entries.Single()).ToArray();
 
@@ -276,7 +276,9 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             var modificationCommandBatchFactoryMock = new Mock<IModificationCommandBatchFactory>();
             modificationCommandBatchFactoryMock.Setup(f => f.Create()).Returns(Mock.Of<ModificationCommandBatch>());
 
-            var commandBatches = CreateCommandBatchPreparer(modificationCommandBatchFactoryMock.Object).BatchCommands(new[] { relatedentry, entry });
+            var commandBatches = RelationalTestHelpers.Instance
+                .CreateCommandBatchPreparer(modificationCommandBatchFactoryMock.Object)
+                .BatchCommands(new[] { relatedentry, entry });
 
             var commandBatchesEnumerator = commandBatches.GetEnumerator();
             commandBatchesEnumerator.MoveNext();
@@ -310,7 +312,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
             fakeEntry2.SetOriginalValue(fakeEntry2.EntityType.FindProperty(nameof(FakeEntity.Value)), "Test");
             fakeEntry2.SetPropertyModified(fakeEntry2.EntityType.FindPrimaryKey().Properties.Single(), isModified: false);
 
-            var sortedEntities = CreateCommandBatchPreparer()
+            var sortedEntities = RelationalTestHelpers.Instance.CreateCommandBatchPreparer()
                 .BatchCommands(new[] { fakeEntry, fakeEntry2, relatedFakeEntry })
                 .Select(cb => cb.ModificationCommands.Single()).Select(mc => mc.Entries.Single()).ToArray();
 
@@ -331,7 +333,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
 
             Assert.Equal(
                 CoreStrings.TempValue(nameof(FakeEntity.Value), nameof(FakeEntity)),
-                Assert.Throws<InvalidOperationException>(() => CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToList()).Message);
+                Assert.Throws<InvalidOperationException>(() => RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { entry }).ToList()).Message);
         }
 
         [Fact]
@@ -353,7 +355,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
                         model.FindEntityType(typeof(RelatedFakeEntity)).GetForeignKeys().First(),
                         model.FindEntityType(typeof(FakeEntity)).GetForeignKeys().First())),
                 Assert.Throws<InvalidOperationException>(
-                    () => CreateCommandBatchPreparer().BatchCommands(new[] { fakeEntry, relatedFakeEntry }).ToArray()).Message);
+                    () => RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { fakeEntry, relatedFakeEntry }).ToArray()).Message);
         }
 
         [Fact]
@@ -382,7 +384,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
                         model.FindEntityType(typeof(FakeEntity)).GetIndexes().
                             Single(i => i.Properties.Any(p => p.Name == nameof(FakeEntity.UniqueValue))))),
                 Assert.Throws<InvalidOperationException>(
-                    () => CreateCommandBatchPreparer().BatchCommands(new[] { fakeEntry, relatedFakeEntry, fakeEntry2 }).ToArray()).Message);
+                    () => RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(new[] { fakeEntry, relatedFakeEntry, fakeEntry2 }).ToArray()).Message);
         }
 
         [Fact]
@@ -407,7 +409,7 @@ namespace Microsoft.EntityFrameworkCore.Relational.Tests.Update
                         model.FindEntityType(typeof(FakeEntity)).GetForeignKeys().First(),
                         model.FindEntityType(typeof(RelatedFakeEntity)).GetForeignKeys().First())),
                 Assert.Throws<InvalidOperationException>(
-                    () => CreateCommandBatchPreparer().BatchCommands(
+                    () => RelationalTestHelpers.Instance.CreateCommandBatchPreparer().BatchCommands(
                         // Order is important for this test. Entry which is not part of cycle but tail should come first.
                         new[] { anotherFakeEntry, fakeEntry, relatedFakeEntry }).ToArray()).Message);
         }

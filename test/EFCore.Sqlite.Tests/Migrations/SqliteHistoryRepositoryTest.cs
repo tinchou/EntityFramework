@@ -1,7 +1,6 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -9,9 +8,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
+using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities.FakeProvider;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
-using Microsoft.EntityFrameworkCore.Update;
+using Microsoft.EntityFrameworkCore.Tests.TestUtilities;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -120,8 +120,8 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
                         new SqliteTypeMapper(new RelationalTypeMapperDependencies()),
                         annotationsProvider,
                         new SqliteMigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()),
-                        Mock.Of<IStateManager>(),
-                        Mock.Of<ICommandBatchPreparer>()),
+                        new FakeStateManager(),
+                        RelationalTestHelpers.Instance.CreateCommandBatchPreparer()),
                     new SqliteMigrationsSqlGenerator(
                         new MigrationsSqlGeneratorDependencies(
                             new RelationalCommandBuilderFactory(
@@ -132,7 +132,7 @@ namespace Microsoft.EntityFrameworkCore.Sqlite.Tests.Migrations
                                     new FakeInterceptingLogger<LoggerCategory.Database.DataReader>(),
                                     new DiagnosticListener("Fake")),
                                 typeMapper),
-                            Mock.Of<IUpdateSqlGenerator>(),
+                            new ConcreteSqlGenerator(),
                             new SqliteSqlGenerationHelper(new RelationalSqlGenerationHelperDependencies()),
                             typeMapper,
                             annotationsProvider)),
