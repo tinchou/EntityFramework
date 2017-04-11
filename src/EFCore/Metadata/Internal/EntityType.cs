@@ -36,8 +36,8 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         private readonly SortedDictionary<IReadOnlyList<IProperty>, Key> _keys
             = new SortedDictionary<IReadOnlyList<IProperty>, Key>(PropertyListComparer.Instance);
 
-        private readonly SortedSet<object> _seedData
-            = new SortedSet<object>();
+        private readonly HashSet<object> _seedData
+            = new HashSet<object>();
 
         private Key _primaryKey;
         private EntityType _baseType;
