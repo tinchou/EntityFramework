@@ -152,7 +152,8 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         }
 
         /// <summary>
-        ///     TODO
+        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
+        ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         public virtual InternalEntityEntry GetOrCreateEntry(IDictionary<string, object> values, IEntityType entityType)
         {
@@ -162,9 +163,6 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                 object entity;
                 _trackingQueryMode = TrackingQueryMode.Multiple;
 
-                // This has a problem with non-shadow entity types
-                //entry = _factory.Create(this, entityType, null /*InternalEntityEntryFactory doesn't set values for shadow entities*/);
-                // TODO we could set values here, but we'd also need an overload for an IDictionary
                 if (entityType.HasClrType())
                 {
                     entity = Activator.CreateInstance(entityType.ClrType);

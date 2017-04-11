@@ -1776,7 +1776,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
         /// </summary>
         public virtual IEnumerable<IDictionary<string, object>> GetSeedData()
             => _seedData.Select(seed =>
-                GetProperties() // we'll ignore invalid and navigation properties on the seeds
+                GetProperties() // we'll ignore navigations and invalid properties on the seeds
                     .Select(p => seed.GetType().GetRuntimeProperty(p.Name))
                     .Where(p => p != null)
                     .ToDictionary(p => p.Name, p => p.GetValue(seed)));

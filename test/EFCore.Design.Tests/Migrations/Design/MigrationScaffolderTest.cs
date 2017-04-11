@@ -1,10 +1,6 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -15,9 +11,12 @@ using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities;
 using Microsoft.EntityFrameworkCore.Relational.Tests.TestUtilities.FakeProvider;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.EntityFrameworkCore.Update;
+using Microsoft.EntityFrameworkCore.Tests.TestUtilities;
 using Microsoft.Extensions.Logging;
-using Moq;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
@@ -63,8 +62,8 @@ namespace Microsoft.EntityFrameworkCore.Design.Tests.Migrations.Design
                     new TestRelationalTypeMapper(new RelationalTypeMapperDependencies()),
                     new TestAnnotationProvider(),
                     new MigrationsAnnotationProvider(new MigrationsAnnotationProviderDependencies()),
-                    Mock.Of<IStateManager>(),
-                    Mock.Of<ICommandBatchPreparer>()),
+                    new FakeStateManager(),
+                    RelationalTestHelpers.Instance.CreateCommandBatchPreparer()),
                 idGenerator,
                 new CSharpMigrationsGenerator(code, new CSharpMigrationOperationGenerator(code), new CSharpSnapshotGenerator(code)),
                 new MockHistoryRepository(),

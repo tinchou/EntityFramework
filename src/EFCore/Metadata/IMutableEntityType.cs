@@ -214,7 +214,7 @@ namespace Microsoft.EntityFrameworkCore.Metadata
         ///         a foreign key that is defined in your model by convention.
         ///     </para>
         /// </summary>
-        /// <param name="data"> The name of the property to remove. </param>
+        /// <param name="data"> The data to seed to this entity. </param>
         void AddSeedData([NotNull] params object[] data);
     }
 }

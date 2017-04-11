@@ -59,7 +59,7 @@ namespace Microsoft.EntityFrameworkCore.Tests.TestUtilities
 
         public IReadOnlyList<InternalEntityEntry> GetEntriesToSave()
         {
-            throw new NotImplementedException();
+            return Enumerable.Empty<InternalEntityEntry>().ToList();
         }
 
         public int SaveChanges(bool acceptAllChangesOnSuccess)

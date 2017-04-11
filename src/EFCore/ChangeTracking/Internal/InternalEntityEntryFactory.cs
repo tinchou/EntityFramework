@@ -32,7 +32,7 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         {
             if (!entityType.HasClrType())
             {
-                // TODO we could set values here, but we'd also need an overload for an IDictionary
+                // TODO use the entity parameter to populate the InternalShadowEntityEntry
                 return new InternalShadowEntityEntry(stateManager, entityType);
             }
 
