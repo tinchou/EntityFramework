@@ -341,7 +341,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
             // We have to clean up for diffing Down operations after Up
             StateManager.Reset();
 
-            var schemaOperations = ((source != null) && (target != null)
+            var schemaOperations = source != null && target != null
                 ? DiffAnnotations(source, target)
                     .Concat(Diff(GetSchemas(source), GetSchemas(target)))
                     .Concat(Diff(diffContext.GetSourceTables(), diffContext.GetTargetTables(), diffContext))
@@ -354,7 +354,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                     ? Add(target, diffContext)
                     : source != null
                         ? Remove(source, diffContext)
-                        : Enumerable.Empty<MigrationOperation>());
+                        : Enumerable.Empty<MigrationOperation>();
             // ToList() ensures we have diffed the schema before calling GetModificationOperations
             return schemaOperations.ToList().Concat(GetModificationOperations());
         }
@@ -1260,22 +1260,32 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
         protected virtual void DiffSeedData(
-            [NotNull] IEntityType source,
-            [NotNull] IEntityType target,
+            [NotNull] TableMapping source,
+            [NotNull] TableMapping target,
             [NotNull] DiffContext diffContext)
         {
             Check.NotNull(source, nameof(source));
             Check.NotNull(target, nameof(target));
             Check.NotNull(diffContext, nameof(diffContext));
 
-            var propertiesMapping = source.GetProperties().ToDictionary(p => p.Name, p => diffContext.FindTarget(p)?.Name ?? p.Name);
-            foreach (var sourceSeed in source.GetSeedData())
+            if (source.EntityTypes.Count != 1 || target.EntityTypes.Count != 1)
             {
-                var mappedSourceSeed = sourceSeed.ToDictionary(kvp => propertiesMapping[kvp.Key], kvp => kvp.Value);
-                StateManager.GetOrCreateEntry(mappedSourceSeed, target).SetEntityState(EntityState.Deleted);
+                // We will ignore for now the case where there's table splitting
+                // and data motion at the same time.
+                // The workaround is to do them in two separate migrations.
+                return;
             }
 
-            var key = target.FindPrimaryKey();
+            var sourceEntityType = source.EntityTypes[0];
+            var targetEntityType = target.EntityTypes[0];
+            var propertiesMapping = sourceEntityType.GetProperties().ToDictionary(p => p.Name, p => diffContext.FindTarget(p)?.Name ?? p.Name);
+            foreach (var sourceSeed in sourceEntityType.GetSeedData())
+            {
+                var mappedSourceSeed = sourceSeed.ToDictionary(kvp => propertiesMapping[kvp.Key], kvp => kvp.Value);
+                StateManager.GetOrCreateEntry(mappedSourceSeed, targetEntityType).SetEntityState(EntityState.Deleted);
+            }
+
+            var key = targetEntityType.FindPrimaryKey();
             foreach (var targetSeed in target.GetSeedData())
             {
                 var keyValues = key.Properties.Select(p => targetSeed[p.Name]).ToArray();
@@ -1287,18 +1297,27 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Internal
                 }
                 else
                 {
-                    StateManager.GetOrCreateEntry(targetSeed, target).SetEntityState(EntityState.Added);
+                    StateManager.GetOrCreateEntry(targetSeed, targetEntityType).SetEntityState(EntityState.Added);
                 }
             }
         }
 
-        protected virtual void AddSeedData([NotNull] IEntityType target)
+        protected virtual void AddSeedData([NotNull] TableMapping target)
         {
             Check.NotNull(target, nameof(target));
 
-            foreach (var targetSeed in target.GetSeedData())
+            if (target.EntityTypes.Count != 1)
             {
-                StateManager.GetOrCreateEntry(targetSeed, target).SetEntityState(EntityState.Added);
+                // We will ignore for now the case where there's table splitting
+                // and data motion at the same time.
+                // The workaround is to do them in two separate migrations.
+                return;
+            }
+
+            var targetEntityType = target.EntityTypes[0];
+            foreach (var targetSeed in targetEntityType.GetSeedData())
+            {
+                StateManager.GetOrCreateEntry(targetSeed, targetEntityType).SetEntityState(EntityState.Added);
             }
         }
 
